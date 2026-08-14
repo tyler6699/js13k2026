@@ -1,0 +1,14 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  overflow: hidden;
+  height: 100%;
+}
+
+#c {
+  display: block;
+  margin: 0 auto;
+  background: #7ec0ee;
+  image-rendering: pixelated;
+}
