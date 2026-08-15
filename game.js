@@ -1,5 +1,7 @@
 // game.js - canvas setup + main loop
 var canvas, ctx, camera, hero, lastTime, wallRideShakeTimer;
+var GAME_WIDTH = 800;
+var GAME_HEIGHT = 480;
 
 function startGame() {
   canvas = document.getElementById("c");
@@ -21,8 +23,11 @@ function startGame() {
 }
 
 function resize() {
-  canvas.width = Math.min(window.innerWidth, 800);
-  canvas.height = Math.min(window.innerHeight, 480);
+  // Keep a fixed 5:3 game surface. CSS scales it to the largest size that
+  // fits the browser, leaving letterbox space instead of stretching it.
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
+  ctx.imageSmoothingEnabled = false;
   if (camera) {
     camera.resize(canvas.width, canvas.height);
   }

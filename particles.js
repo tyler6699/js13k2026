@@ -30,7 +30,7 @@ var Particles = {
     for (var i = 0; i < count; i++) {
       var direction = Math.random() * 2 - 1;
       Particles.add(
-        x + direction * 12,
+        x + direction * 30,
         y,
         direction * speed * (0.5 + Math.random() * 0.65),
         -(upward + Math.random() * speed * 0.55),
