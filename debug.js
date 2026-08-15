@@ -31,6 +31,8 @@ var Debug = {
       "lastJumpType: " + hero.lastJumpType,
       "jumpKeyWasDown: " + hero.jumpKeyWasDown,
       "redUnlocked: " + Level.redUnlocked,
+      "orangeUnlocked: " + Level.orangeUnlocked,
+      "level: " + (Level.currentIndex + 1),
       "levelComplete: " + Level.complete,
       "levelFailed: " + Level.failed,
     ];

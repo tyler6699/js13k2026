@@ -316,7 +316,11 @@ Hero.prototype.draw = function (ctx, camera) {
     var fade = Math.min(previous.life, sample.life) / TRAIL_LIFE;
 
     ctx.globalAlpha = fade * 0.85;
-    var trailColors = Level.redUnlocked ? [TRAIL_COLORS[0]] : ["#c7c2c8"];
+    var trailColors = Level.orangeUnlocked
+      ? [TRAIL_COLORS[0], TRAIL_COLORS[1]]
+      : Level.redUnlocked
+        ? [TRAIL_COLORS[0]]
+        : ["#c7c2c8"];
     for (var band = 0; band < trailColors.length; band++) {
       var offset = (band - (trailColors.length - 1) / 2) * TRAIL_BAND_WIDTH;
       ctx.strokeStyle = trailColors[band];
@@ -340,7 +344,11 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = Level.redUnlocked ? "#e63946" : "#aaa5ad";
+  ctx.fillStyle = Level.orangeUnlocked
+    ? "#ff9500"
+    : Level.redUnlocked
+      ? "#e63946"
+      : "#aaa5ad";
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
   var taperedBottom = freeEdge + this.wallShapeSide * this.w * 0.16 * this.wallShape;

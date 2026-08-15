@@ -39,7 +39,7 @@ function loop(now) {
 }
 
 function update(dt) {
-  if (Level.failed) {
+  if (Level.failed || Level.complete) {
     Level.update(hero, dt);
     Particles.update(dt);
     camera.updateShake(dt);
