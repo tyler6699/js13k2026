@@ -52,6 +52,7 @@ function update(dt) {
   var previousVy = hero.vy;
   var previousJumpSerial = hero.jumpSerial;
 
+  Level.updateMovingPlatforms(hero, dt);
   hero.update(dt);
   Level.update(hero, dt);
   Particles.update(dt);

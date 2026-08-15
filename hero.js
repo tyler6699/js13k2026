@@ -196,7 +196,9 @@ Hero.prototype.update = function (dt) {
     Particles.wallSlide(this, wallSide, dt);
   }
 
+  var previousBottom = this.y + this.h;
   this.moveAndCollide(this.vx * dt, this.vy * dt);
+  Level.resolveMovingPlatforms(this, previousBottom);
   this.updateTrail(dt, trailStartX, trailStartY);
 
   var touchingWallSide = this.touchingWallLeft ? -1 : this.touchingWallRight ? 1 : 0;

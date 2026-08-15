@@ -1,6 +1,6 @@
 // level.js - level layouts, colour pickups, hazards, and exits
 // space = empty, 1 = ground, r/o = red/orange platforms
-// C/O = red/orange crystals, D = door, ^ = spikes
+// C/O = red/orange crystals, M = orange moving platform, D = door, ^ = spikes
 var LEVEL_COMPLETE_DELAY = 2;
 var COLOR_INFO = {
   red: { tileId: 2, color: "#ff304f", highlight: "#ffb3bf" },
@@ -31,9 +31,9 @@ var Level = {
         "",
         "                                               D",
         "",
-        "                                     O      ooooo",
-        "                                  rrrrr",
-        "                       C      rrrrr   ooo",
+        "                                     O      11111",
+        "                                  rrrrr   rrr",
+        "                       C      rrrrr   M",
         "                    1111  rrrrr",
         "               111111",
         "          111111",
@@ -49,6 +49,7 @@ var Level = {
   redUnlocked: false,
   orangeUnlocked: false,
   crystals: null,
+  movingPlatforms: null,
   door: null,
   complete: false,
   completeTimer: 0,
@@ -68,6 +69,7 @@ var Level = {
     Level.redUnlocked = false;
     Level.orangeUnlocked = false;
     Level.crystals = [];
+    Level.movingPlatforms = [];
     Level.door = null;
     Level.complete = false;
     Level.completeTimer = 0;
@@ -101,6 +103,23 @@ var Level = {
             w: 24,
             h: TILE_SIZE * 2,
           };
+        }
+        if (c === "M") {
+          Level.movingPlatforms.push({
+            x: colIndex * TILE_SIZE,
+            y: rowIndex * TILE_SIZE,
+            startX: colIndex * TILE_SIZE,
+            startY: rowIndex * TILE_SIZE,
+            w: TILE_SIZE * 2,
+            h: TILE_SIZE / 2,
+            axis: "x",
+            range: TILE_SIZE * 4,
+            speed: 80,
+            offset: 0,
+            direction: 1,
+            dx: 0,
+            dy: 0,
+          });
         }
         if (c === "1") return 1;
         if (c === "r") return COLOR_INFO.red.tileId;
@@ -144,6 +163,55 @@ var Level = {
       if (!Level.isColorUnlocked(Level.requiredColors[i])) return false;
     }
     return true;
+  },
+
+  updateMovingPlatforms: function (hero, dt) {
+    for (var i = 0; i < Level.movingPlatforms.length; i++) {
+      var platform = Level.movingPlatforms[i];
+      platform.dx = 0;
+      platform.dy = 0;
+      if (!Level.orangeUnlocked) continue;
+
+      var wasStanding =
+        hero.onGround &&
+        Math.abs(hero.y + hero.h - platform.y) <= 2 &&
+        hero.x + hero.w > platform.x &&
+        hero.x < platform.x + platform.w;
+      var oldX = platform.x;
+      var oldY = platform.y;
+      platform.offset += platform.direction * platform.speed * dt;
+      if (platform.offset >= platform.range) {
+        platform.offset = platform.range;
+        platform.direction = -1;
+      } else if (platform.offset <= 0) {
+        platform.offset = 0;
+        platform.direction = 1;
+      }
+      if (platform.axis === "x") platform.x = platform.startX + platform.offset;
+      else platform.y = platform.startY - platform.offset;
+      platform.dx = platform.x - oldX;
+      platform.dy = platform.y - oldY;
+
+      if (wasStanding) {
+        hero.moveByPlatform(platform.dx, platform.dy);
+      }
+    }
+  },
+
+  resolveMovingPlatforms: function (hero, previousBottom) {
+    for (var i = 0; i < Level.movingPlatforms.length; i++) {
+      var platform = Level.movingPlatforms[i];
+      var overlapsX =
+        hero.x + hero.w > platform.x && hero.x < platform.x + platform.w;
+      var crossesTop =
+        previousBottom <= platform.y + 4 && hero.y + hero.h >= platform.y;
+      if (hero.vy >= 0 && overlapsX && crossesTop) {
+        hero.y = platform.y - hero.h;
+        hero.vy = 0;
+        hero.onGround = true;
+        return;
+      }
+    }
   },
 
   touchesHazard: function (entity) {
@@ -310,6 +378,7 @@ var Level = {
       "orange",
       seamOverlap
     );
+    Level.drawMovingPlatforms(ctx, cameraX, cameraY);
 
     Level.drawCrystals(ctx, cameraX, cameraY);
     Level.drawDoor(ctx, cameraX, cameraY);
@@ -370,6 +439,30 @@ var Level = {
       }
     }
     ctx.restore();
+  },
+
+  drawMovingPlatforms: function (ctx, cameraX, cameraY) {
+    for (var i = 0; i < Level.movingPlatforms.length; i++) {
+      var platform = Level.movingPlatforms[i];
+      var x = Math.round(platform.x) - cameraX;
+      var y = Math.round(platform.y) - cameraY;
+
+      ctx.save();
+      ctx.fillStyle = Level.orangeUnlocked ? COLOR_INFO.orange.color : "#76614d";
+      ctx.fillRect(x, y, platform.w, platform.h);
+      ctx.fillStyle = Level.orangeUnlocked ? COLOR_INFO.orange.highlight : "#a68b70";
+      ctx.fillRect(x + 5, y + 4, platform.w - 10, 3);
+      ctx.fillStyle = "#17151f";
+      ctx.beginPath();
+      ctx.moveTo(x + platform.w / 2 - 3, y + 4);
+      ctx.lineTo(x + platform.w / 2 - 10, y + 8);
+      ctx.lineTo(x + platform.w / 2 - 3, y + 12);
+      ctx.moveTo(x + platform.w / 2 + 3, y + 4);
+      ctx.lineTo(x + platform.w / 2 + 10, y + 8);
+      ctx.lineTo(x + platform.w / 2 + 3, y + 12);
+      ctx.fill();
+      ctx.restore();
+    }
   },
 
   drawCrystals: function (ctx, cameraX, cameraY) {

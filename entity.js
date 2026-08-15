@@ -28,6 +28,20 @@ Entity.prototype.moveAndCollide = function (dx, dy) {
   this.updateWallTouch();
 };
 
+// Moving platforms carry entities independently of their own velocity. Resolve
+// that displacement using the platform's direction so a sideways push into a
+// wall is handled horizontally instead of becoming a vertical pop next frame.
+Entity.prototype.moveByPlatform = function (dx, dy) {
+  if (dx !== 0) {
+    this.x += dx;
+    this.resolveAxis("x", dx);
+  }
+  if (dy !== 0) {
+    this.y += dy;
+    this.resolveAxis("y", dy);
+  }
+};
+
 // True if a solid tile overlaps the given rect - used as a general probe
 // rather than relying on actual collision (which only fires while moving).
 Entity.prototype.touchesSolid = function (x, y, w, h) {
@@ -87,7 +101,7 @@ Entity.prototype.isGroundedProbe = function (dt) {
   return this.touchesSolid(this.x, this.y + this.h, this.w, margin);
 };
 
-Entity.prototype.resolveAxis = function (axis) {
+Entity.prototype.resolveAxis = function (axis, movement) {
   var left = this.x;
   var right = this.x + this.w;
   var top = this.y;
@@ -97,6 +111,8 @@ Entity.prototype.resolveAxis = function (axis) {
   var col1 = Math.floor((right - TILE_EPSILON) / TILE_SIZE);
   var row0 = Math.floor(top / TILE_SIZE);
   var row1 = Math.floor((bottom - TILE_EPSILON) / TILE_SIZE);
+  var direction =
+    movement === undefined ? (axis === "x" ? this.vx : this.vy) : movement;
 
   for (var row = row0; row <= row1; row++) {
     for (var col = col0; col <= col1; col++) {
@@ -106,14 +122,14 @@ Entity.prototype.resolveAxis = function (axis) {
       var tileTop = row * TILE_SIZE;
 
       if (axis === "x") {
-        if (this.vx > 0) this.x = tileLeft - this.w;
-        else if (this.vx < 0) this.x = tileLeft + TILE_SIZE;
+        if (direction > 0) this.x = tileLeft - this.w;
+        else if (direction < 0) this.x = tileLeft + TILE_SIZE;
         this.vx = 0;
       } else {
-        if (this.vy > 0) {
+        if (direction > 0) {
           this.y = tileTop - this.h;
           this.onGround = true;
-        } else if (this.vy < 0) {
+        } else if (direction < 0) {
           this.y = tileTop + TILE_SIZE;
         }
         this.vy = 0;
