@@ -1,6 +1,6 @@
 // debug.js - on-screen readout of hero state, toggle with F1
 var Debug = {
-  enabled: true,
+  enabled: false,
 
   init: function () {
     window.addEventListener("keydown", function (e) {
@@ -30,6 +30,9 @@ var Debug = {
       "airJumpsLeft: " + hero.airJumpsLeft,
       "lastJumpType: " + hero.lastJumpType,
       "jumpKeyWasDown: " + hero.jumpKeyWasDown,
+      "redUnlocked: " + Level.redUnlocked,
+      "levelComplete: " + Level.complete,
+      "levelFailed: " + Level.failed,
     ];
 
     var padding = 8;

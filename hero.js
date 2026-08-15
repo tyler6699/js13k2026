@@ -46,6 +46,31 @@ function Hero(x, y) {
 Hero.prototype = Object.create(Entity.prototype);
 Hero.prototype.constructor = Hero;
 
+Hero.prototype.reset = function (x, y) {
+  this.x = x;
+  this.y = y;
+  this.vx = 0;
+  this.vy = 0;
+  this.onGround = false;
+  this.touchingWallLeft = false;
+  this.touchingWallRight = false;
+  this.airJumpsLeft = MAX_AIR_JUMPS;
+  this.jumpKeyWasDown = false;
+  this.wallCoyoteLeft = 0;
+  this.wallCoyoteRight = 0;
+  this.wallJumpLock = 0;
+  this.groundCoyote = 0;
+  this.lastJumpType = "none";
+  this.visualScaleX = 1;
+  this.visualScaleY = 1;
+  this.visualTilt = 0;
+  this.somersaultAngle = 0;
+  this.somersaultTime = 0;
+  this.wallShape = 0;
+  this.trail.length = 0;
+  this.trailDistance = 0;
+};
+
 Hero.prototype.update = function (dt) {
   var trailStartX = this.x + this.w / 2;
   var trailStartY = this.y + this.h / 2;
@@ -199,21 +224,9 @@ Hero.prototype.update = function (dt) {
     if (this.somersaultTime === 0) this.somersaultAngle = 0;
   }
 
-  // fell off the bottom of the level - reset
+  // Safety fallback for maps without a hazard row.
   if (this.y > Level.heightPx()) {
-    this.x = 64;
-    this.y = 64;
-    this.vx = 0;
-    this.vy = 0;
-    this.airJumpsLeft = MAX_AIR_JUMPS;
-    this.wallJumpLock = 0;
-    this.groundCoyote = 0;
-    this.lastJumpType = "none";
-    this.somersaultAngle = 0;
-    this.somersaultTime = 0;
-    this.wallShape = 0;
-    this.trail.length = 0;
-    this.trailDistance = 0;
+    Level.fail(this);
   }
 };
 
@@ -303,9 +316,10 @@ Hero.prototype.draw = function (ctx, camera) {
     var fade = Math.min(previous.life, sample.life) / TRAIL_LIFE;
 
     ctx.globalAlpha = fade * 0.85;
-    for (var band = 0; band < TRAIL_COLORS.length; band++) {
-      var offset = (band - (TRAIL_COLORS.length - 1) / 2) * TRAIL_BAND_WIDTH;
-      ctx.strokeStyle = TRAIL_COLORS[band];
+    var trailColors = Level.redUnlocked ? [TRAIL_COLORS[0]] : ["#c7c2c8"];
+    for (var band = 0; band < trailColors.length; band++) {
+      var offset = (band - (trailColors.length - 1) / 2) * TRAIL_BAND_WIDTH;
+      ctx.strokeStyle = trailColors[band];
       ctx.beginPath();
       ctx.moveTo(
         previous.x + normalX * offset - camera.x,
@@ -326,7 +340,7 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = "#e63946";
+  ctx.fillStyle = Level.redUnlocked ? "#e63946" : "#aaa5ad";
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
   var taperedBottom = freeEdge + this.wallShapeSide * this.w * 0.16 * this.wallShape;

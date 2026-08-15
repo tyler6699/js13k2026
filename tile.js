@@ -2,9 +2,8 @@
 var TILE_SIZE = 32;
 var TILE_EPSILON = 0.001;
 
-// 0 = empty, 1 = solid ground
-var SOLID_TILES = { 1: true };
-
 function isSolidTileId(id) {
-  return !!SOLID_TILES[id];
+  if (id === 1) return true;
+  if (id === 2) return Level.redUnlocked;
+  return false;
 }

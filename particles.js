@@ -6,7 +6,8 @@ var Particles = {
   rainbow: ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#af52de"],
 
   nextRainbow: function () {
-    var color = Particles.rainbow[Particles.rainbowIndex];
+    if (!Level.redUnlocked) return "#c7c2c8";
+    var color = Particles.rainbow[0];
     Particles.rainbowIndex = (Particles.rainbowIndex + 1) % Particles.rainbow.length;
     return color;
   },

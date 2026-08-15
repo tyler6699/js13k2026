@@ -39,6 +39,13 @@ function loop(now) {
 }
 
 function update(dt) {
+  if (Level.failed) {
+    Level.update(hero, dt);
+    Particles.update(dt);
+    camera.updateShake(dt);
+    return;
+  }
+
   var wasGrounded = hero.onGround;
   var wasTouchingWall = hero.touchingWallLeft || hero.touchingWallRight;
   var previousVx = hero.vx;
@@ -46,6 +53,7 @@ function update(dt) {
   var previousJumpSerial = hero.jumpSerial;
 
   hero.update(dt);
+  Level.update(hero, dt);
   Particles.update(dt);
   camera.follow(hero, dt);
 
@@ -89,5 +97,6 @@ function draw() {
   hero.draw(ctx, camera);
   ctx.restore();
 
+  Level.drawHud(ctx, canvas);
   Debug.draw(ctx, hero);
 }
