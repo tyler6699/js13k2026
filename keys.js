@@ -9,6 +9,17 @@ var Keys = {
   init: function () {
     window.addEventListener("keydown", function (e) {
       Keys.down[e.code] = true;
+
+      if (
+        e.code === "KeyF" &&
+        !e.repeat &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
     });
     window.addEventListener("keyup", function (e) {
       Keys.down[e.code] = false;
@@ -18,6 +29,13 @@ var Keys = {
     for (var i = 0; i < buttons.length; i++) {
       Keys.bindTouchButton(buttons[i]);
     }
+
+    document
+      .getElementById("fullscreen-button")
+      .addEventListener("click", function (e) {
+        e.preventDefault();
+        toggleFullscreen();
+      });
 
     window.addEventListener("blur", function () {
       for (var code in Keys.down) Keys.down[code] = false;

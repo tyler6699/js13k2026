@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>platformer</title>
   <script type="application/javascript">
     version = Math.floor(Math.random() * 1000);
@@ -15,6 +15,7 @@
 <body onload="startGame()">
   <canvas id="c"></canvas>
   <div id="mobile-controls" aria-label="Touch controls">
+    <button id="fullscreen-button" class="control-button fullscreen-button" aria-label="Toggle fullscreen">FULL</button>
     <div class="d-pad" aria-label="Direction pad">
       <button class="control-button d-up" data-key="ArrowUp" aria-label="Up">&#9650;</button>
       <button class="control-button d-left" data-key="ArrowLeft" aria-label="Move left">&#9664;</button>

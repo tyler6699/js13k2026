@@ -33,6 +33,23 @@ function resize() {
   }
 }
 
+function toggleFullscreen() {
+  var root = document.documentElement;
+  var active = document.fullscreenElement || document.webkitFullscreenElement;
+  var action = active
+    ? document.exitFullscreen || document.webkitExitFullscreen
+    : root.requestFullscreen || root.webkitRequestFullscreen;
+
+  if (action) {
+    var result = action.call(active ? document : root);
+    if (result && result.catch) {
+      result.catch(function () {
+        // Fullscreen may be unavailable or blocked by the browser.
+      });
+    }
+  }
+}
+
 function loop(now) {
   var dt = Math.min((now - lastTime) / 1000, 1 / 30); // clamp to avoid huge steps on tab-switch
   lastTime = now;

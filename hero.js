@@ -19,6 +19,11 @@ var TRAIL_LIFE = 0.42; // seconds before a trail sample disappears
 var TRAIL_BAND_WIDTH = 3;
 var TRAIL_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#af52de"];
 var SHADOW_MAX_DISTANCE = 240;
+var SQUISHINESS = 1.2; // 0 = rigid, 1 = original deformation, higher = squishier
+
+function squishScale(scale) {
+  return 1 + (scale - 1) * SQUISHINESS;
+}
 
 function Hero(x, y) {
   Entity.call(this, x, y, 22, 28);
@@ -101,8 +106,8 @@ Hero.prototype.update = function (dt) {
     inputDirection !== this.moveDirection &&
     this.onGround
   ) {
-    this.visualScaleX = 1.18;
-    this.visualScaleY = 0.88;
+    this.visualScaleX = squishScale(1.18);
+    this.visualScaleY = squishScale(0.88);
     this.visualTilt = -inputDirection * 0.16;
   }
   if (inputDirection !== 0) this.moveDirection = inputDirection;
@@ -135,8 +140,8 @@ Hero.prototype.update = function (dt) {
       this.vy = -JUMP_SPEED;
       this.lastJumpType = "ground";
       this.jumpSerial++;
-      this.visualScaleX = 0.78;
-      this.visualScaleY = 1.24;
+      this.visualScaleX = squishScale(0.78);
+      this.visualScaleY = squishScale(1.24);
       Particles.jump(this, "ground");
       this.groundCoyote = 0; // consumed - stops a single press re-triggering next frame
     } else if (onWall) {
@@ -149,16 +154,16 @@ Hero.prototype.update = function (dt) {
       this.wallCoyoteRight = 0;
       this.lastJumpType = "wall";
       this.jumpSerial++;
-      this.visualScaleX = 0.76;
-      this.visualScaleY = 1.26;
+      this.visualScaleX = squishScale(0.76);
+      this.visualScaleY = squishScale(1.26);
       Particles.jump(this, "wall");
     } else if (this.airJumpsLeft > 0) {
       this.vy = -JUMP_SPEED;
       this.airJumpsLeft--;
       this.lastJumpType = "air";
       this.jumpSerial++;
-      this.visualScaleX = 0.72;
-      this.visualScaleY = 1.3;
+      this.visualScaleX = squishScale(0.72);
+      this.visualScaleY = squishScale(1.3);
       this.somersaultAngle = 0;
       this.somersaultTime = SOMERSAULT_DURATION;
       this.somersaultDirection = this.facing;
@@ -208,8 +213,8 @@ Hero.prototype.update = function (dt) {
     (wallShapeTarget - this.wallShape) * (1 - Math.exp(-18 * dt));
 
   if (!wasGrounded && this.onGround) {
-    this.visualScaleX = clamp(1 + landingSpeed / 1100, 1.12, 1.42);
-    this.visualScaleY = clamp(1 - landingSpeed / 1500, 0.62, 0.86);
+    this.visualScaleX = squishScale(clamp(1 + landingSpeed / 1100, 1.12, 1.42));
+    this.visualScaleY = squishScale(clamp(1 - landingSpeed / 1500, 0.62, 0.86));
     Particles.land(this, landingSpeed);
   }
 
@@ -353,7 +358,8 @@ Hero.prototype.draw = function (ctx, camera) {
       : "#aaa5ad";
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
-  var taperedBottom = freeEdge + this.wallShapeSide * this.w * 0.16 * this.wallShape;
+  var taperedBottom =
+    freeEdge + this.wallShapeSide * this.w * 0.16 * SQUISHINESS * this.wallShape;
   ctx.beginPath();
   ctx.moveTo(wallEdge, -this.h);
   ctx.lineTo(freeEdge, -this.h);
