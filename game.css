@@ -32,6 +32,44 @@ body {
   display: none;
 }
 
+#fullscreen-help {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 12, 18, 0.82);
+  color: white;
+  font: 16px/1.45 system-ui, sans-serif;
+  text-align: center;
+  touch-action: none;
+}
+
+#fullscreen-help[hidden] {
+  display: none;
+}
+
+.fullscreen-help-panel {
+  max-width: 320px;
+  padding: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  background: #171b25;
+}
+
+#fullscreen-help-close {
+  min-width: 96px;
+  min-height: 44px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  background: #343b4c;
+  color: white;
+  font: bold 14px/1 system-ui, sans-serif;
+  touch-action: none;
+}
+
 @media (hover: none) and (pointer: coarse) {
   #mobile-controls {
     position: fixed;
@@ -71,6 +109,10 @@ body {
     height: 44px;
     border-radius: 10px;
     font-size: 12px;
+  }
+
+  .fullscreen-button[hidden] {
+    display: none;
   }
 
   .d-pad {

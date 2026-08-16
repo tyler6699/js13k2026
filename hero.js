@@ -5,6 +5,7 @@ var GROUND_ACCEL = 1200; // takes roughly 0.2s to build to full speed
 var GROUND_DECEL = 2100; // braking remains sharper than acceleration
 var AIR_ACCEL = 800; // preserves takeoff momentum while allowing corrections
 var JUMP_SPEED = 520; // px/s (initial upward velocity)
+var BOUNCE_SPEED = 850; // green blocks launch much higher than a normal jump
 var JUMP_CUT = 0.45; // releasing jump early shortens the jump
 var MAX_AIR_JUMPS = 1; // 1 extra jump after leaving the ground = a double jump
 var SOMERSAULT_DURATION = 0.42; // one full turn during the second jump
@@ -17,7 +18,7 @@ var GROUND_COYOTE_TIME = 0.1; // grace window after leaving the ground where a j
 var TRAIL_SPACING = 6; // px between rainbow trail samples
 var TRAIL_LIFE = 0.42; // seconds before a trail sample disappears
 var TRAIL_BAND_WIDTH = 3;
-var TRAIL_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#af52de"];
+var TRAIL_COLORS = ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#af52de"];
 var SHADOW_MAX_DISTANCE = 240;
 var SQUISHINESS = 1.2; // 0 = rigid, 1 = original deformation, higher = squishier
 
@@ -34,7 +35,7 @@ function Hero(x, y) {
   this.wallCoyoteRight = 0;
   this.wallJumpLock = 0;
   this.groundCoyote = 0;
-  this.lastJumpType = "none"; // ground / air / wall - for debugging
+  this.lastJumpType = "none"; // ground / air / wall / bounce - for debugging
   this.jumpSerial = 0; // increments once per jump so other systems can react
   this.moveDirection = 0;
   this.visualScaleX = 1;
@@ -80,7 +81,7 @@ Hero.prototype.update = function (dt) {
   var trailStartX = this.x + this.w / 2;
   var trailStartY = this.y + this.h / 2;
   var wasGrounded = this.onGround;
-  var landingSpeed = this.vy;
+  var landingSpeed;
   var left = Keys.isDown("ArrowLeft") || Keys.isDown("KeyA");
   var right = Keys.isDown("ArrowRight") || Keys.isDown("KeyD");
   var jumpDown = Keys.isDown("Space") || Keys.isDown("ArrowUp") || Keys.isDown("KeyW");
@@ -115,7 +116,7 @@ Hero.prototype.update = function (dt) {
   // this.onGround reflects the END of last frame's collision pass, so on the
   // exact frame you land it's still false. The probe checks the current
   // position/speed directly, so it catches the landing the same frame it happens.
-  var groundedNow = this.onGround || this.isGroundedProbe(dt);
+  var groundedNow = this.onGround || (this.vy >= 0 && this.isGroundedProbe(dt));
   this.groundCoyote = groundedNow ? GROUND_COYOTE_TIME : Math.max(0, this.groundCoyote - dt);
   var isGroundedForJump = this.groundCoyote > 0;
 
@@ -201,9 +202,29 @@ Hero.prototype.update = function (dt) {
     Particles.wallSlide(this, wallSide, dt);
   }
 
+  landingSpeed = this.vy;
   var previousBottom = this.y + this.h;
   this.moveAndCollide(this.vx * dt, this.vy * dt);
   Level.resolveMovingPlatforms(this, previousBottom);
+
+  var teleported = Level.updatePortals(this, dt, this.vx, landingSpeed);
+  if (
+    !teleported &&
+    landingSpeed > 0 &&
+    this.onGround &&
+    Level.isOnGreenBounce(this)
+  ) {
+    this.vy = -BOUNCE_SPEED;
+    this.onGround = false;
+    this.groundCoyote = 0;
+    this.airJumpsLeft = MAX_AIR_JUMPS;
+    this.lastJumpType = "bounce";
+    this.jumpSerial++;
+    this.visualScaleX = squishScale(1.5);
+    this.visualScaleY = squishScale(0.55);
+    Particles.bounce(this);
+    camera.shake(7, 0.24);
+  }
   this.updateTrail(dt, trailStartX, trailStartY);
 
   var touchingWallSide = this.touchingWallLeft ? -1 : this.touchingWallRight ? 1 : 0;
@@ -323,11 +344,17 @@ Hero.prototype.draw = function (ctx, camera) {
     var fade = Math.min(previous.life, sample.life) / TRAIL_LIFE;
 
     ctx.globalAlpha = fade * 0.85;
-    var trailColors = Level.orangeUnlocked
-      ? [TRAIL_COLORS[0], TRAIL_COLORS[1]]
-      : Level.redUnlocked
-        ? [TRAIL_COLORS[0]]
-        : ["#c7c2c8"];
+    var trailColors = Level.blueUnlocked
+      ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3], TRAIL_COLORS[4]]
+      : Level.greenUnlocked
+        ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3]]
+        : Level.yellowUnlocked
+        ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2]]
+        : Level.orangeUnlocked
+          ? [TRAIL_COLORS[0], TRAIL_COLORS[1]]
+          : Level.redUnlocked
+            ? [TRAIL_COLORS[0]]
+            : ["#c7c2c8"];
     for (var band = 0; band < trailColors.length; band++) {
       var offset = (band - (trailColors.length - 1) / 2) * TRAIL_BAND_WIDTH;
       ctx.strokeStyle = trailColors[band];
@@ -351,11 +378,17 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = Level.orangeUnlocked
-    ? "#ff9500"
-    : Level.redUnlocked
-      ? "#e63946"
-      : "#aaa5ad";
+  ctx.fillStyle = Level.blueUnlocked
+    ? "#0a84ff"
+    : Level.greenUnlocked
+      ? "#34c759"
+      : Level.yellowUnlocked
+      ? "#ffd43b"
+      : Level.orangeUnlocked
+        ? "#e66a19"
+        : Level.redUnlocked
+          ? "#e63946"
+          : "#aaa5ad";
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
   var taperedBottom =

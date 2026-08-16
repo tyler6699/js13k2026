@@ -7,6 +7,17 @@ var Keys = {
   },
 
   init: function () {
+    function preventTouchGesture(e) {
+      e.preventDefault();
+    }
+
+    var touchOptions = { passive: false };
+    document.addEventListener("touchstart", preventTouchGesture, touchOptions);
+    document.addEventListener("touchmove", preventTouchGesture, touchOptions);
+    document.addEventListener("touchend", preventTouchGesture, touchOptions);
+    document.addEventListener("gesturestart", preventTouchGesture, touchOptions);
+    document.addEventListener("gesturechange", preventTouchGesture, touchOptions);
+
     window.addEventListener("keydown", function (e) {
       Keys.down[e.code] = true;
 
@@ -20,6 +31,23 @@ var Keys = {
         e.preventDefault();
         toggleFullscreen();
       }
+
+      var skipDirection =
+        e.key === "+" || e.code === "NumpadAdd"
+          ? 1
+          : e.key === "-" || e.code === "NumpadSubtract"
+            ? -1
+            : 0;
+      if (
+        skipDirection !== 0 &&
+        !e.repeat &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        e.preventDefault();
+        Level.skipLevel(hero, skipDirection);
+      }
     });
     window.addEventListener("keyup", function (e) {
       Keys.down[e.code] = false;
@@ -30,11 +58,21 @@ var Keys = {
       Keys.bindTouchButton(buttons[i]);
     }
 
+    var fullscreenButton = document.getElementById("fullscreen-button");
+    var standalone =
+      window.navigator.standalone ||
+      window.matchMedia("(display-mode: standalone)").matches;
+    fullscreenButton.hidden = standalone;
+    fullscreenButton.addEventListener("pointerup", function (e) {
+      e.preventDefault();
+      toggleFullscreen();
+    });
+
     document
-      .getElementById("fullscreen-button")
-      .addEventListener("click", function (e) {
+      .getElementById("fullscreen-help-close")
+      .addEventListener("pointerup", function (e) {
         e.preventDefault();
-        toggleFullscreen();
+        document.getElementById("fullscreen-help").hidden = true;
       });
 
     window.addEventListener("blur", function () {

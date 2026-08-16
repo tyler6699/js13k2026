@@ -1,10 +1,13 @@
 // level.js - level layouts, colour pickups, hazards, and exits
-// space = empty, 1 = ground, r/o = red/orange platforms
-// C/O = red/orange crystals, M = orange moving platform, D = door, ^ = spikes
+// space = empty, 1 = ground, r/o/y/g = colour platforms
+// C/O/Y/G/B = colour crystals, u/v/</> = portals, D = door, ^ = spikes
 var LEVEL_COMPLETE_DELAY = 2;
 var COLOR_INFO = {
   red: { tileId: 2, color: "#ff304f", highlight: "#ffb3bf" },
-  orange: { tileId: 4, color: "#ff9500", highlight: "#ffd09a" },
+  orange: { tileId: 4, color: "#e66a19", highlight: "#ffc08a" },
+  yellow: { tileId: 5, color: "#ffd43b", highlight: "#fff3a3", disappears: true },
+  green: { tileId: 6, color: "#34c759", highlight: "#a8f0b8", bounces: true },
+  blue: { color: "#0a84ff", highlight: "#8dc8ff" },
 };
 
 var Level = {
@@ -40,6 +43,58 @@ var Level = {
         "11111111111111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
       ],
     },
+    {
+      colors: ["red", "orange", "yellow"],
+      rows: [
+        "",
+        "",
+        "                                               y",
+        "                                               y     D",
+        "                                            Y  y",
+        "                                        oooooo y 111111111",
+        "                                  oooooo",
+        "                          O  ooooo",
+        "                    rrrrrrrr",
+        "                  C",
+        "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      ],
+    },
+    {
+      colors: ["red", "orange", "yellow", "green"],
+      rows: [
+        "",
+        "                                                   1    D",
+        "                                                   1",
+        "                                                   11    111",
+        "                                               y",
+        "                                               y",
+        "                                            Y  y",
+        "                                        oooooo y",
+        "                                  oooooo       y",
+        "                          O  ooooo             y",
+        "                    rrrrrrrr                   yG  ggg",
+        "                  C                          11111111111",
+        "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      ],
+    },
+    {
+      colors: ["red", "orange", "yellow", "green", "blue"],
+      rows: [
+        "",
+        "",
+        "                                                       B",
+        "                                                   1111111111       >      D",
+        "                                               y",
+        "                                               y                      1111111111",
+        "                                            Y  y",
+        "                                        oooooo y",
+        "                                  oooooo       y",
+        "                          O  ooooo             y",
+        "                    rrrrrrrr                   yG  ggg        u",
+        "                  C                          11111111111    11111",
+        "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      ],
+    },
   ],
   currentIndex: 0,
   cols: 0,
@@ -48,8 +103,13 @@ var Level = {
   requiredColors: null,
   redUnlocked: false,
   orangeUnlocked: false,
+  yellowUnlocked: false,
+  greenUnlocked: false,
+  blueUnlocked: false,
   crystals: null,
   movingPlatforms: null,
+  portals: null,
+  portalCooldown: 0,
   door: null,
   complete: false,
   completeTimer: 0,
@@ -68,8 +128,13 @@ var Level = {
     Level.requiredColors = definition.colors;
     Level.redUnlocked = false;
     Level.orangeUnlocked = false;
+    Level.yellowUnlocked = false;
+    Level.greenUnlocked = false;
+    Level.blueUnlocked = false;
     Level.crystals = [];
     Level.movingPlatforms = [];
+    Level.portals = [];
+    Level.portalCooldown = 0;
     Level.door = null;
     Level.complete = false;
     Level.completeTimer = 0;
@@ -86,7 +151,18 @@ var Level = {
       var cells = row.split("");
       while (cells.length < Level.cols) cells.push(" ");
       return cells.map(function (c, colIndex) {
-        var crystalColor = c === "C" ? "red" : c === "O" ? "orange" : null;
+        var crystalColor =
+          c === "C"
+            ? "red"
+            : c === "O"
+              ? "orange"
+              : c === "Y"
+                ? "yellow"
+                : c === "G"
+                  ? "green"
+                  : c === "B"
+                    ? "blue"
+                    : null;
         if (crystalColor) {
           Level.crystals.push({
             color: crystalColor,
@@ -121,10 +197,33 @@ var Level = {
             dy: 0,
           });
         }
+        var portalDirection =
+          c === "u"
+            ? { x: 0, y: -1 }
+            : c === "v"
+              ? { x: 0, y: 1 }
+              : c === "<"
+                ? { x: -1, y: 0 }
+                : c === ">"
+                  ? { x: 1, y: 0 }
+                  : null;
+        if (portalDirection) {
+          Level.portals.push({
+            pair: Math.floor(Level.portals.length / 2),
+            x: colIndex * TILE_SIZE + 4,
+            y: rowIndex * TILE_SIZE + 4,
+            w: TILE_SIZE - 8,
+            h: TILE_SIZE - 8,
+            nx: portalDirection.x,
+            ny: portalDirection.y,
+          });
+        }
         if (c === "1") return 1;
         if (c === "r") return COLOR_INFO.red.tileId;
         if (c === "^") return 3;
         if (c === "o") return COLOR_INFO.orange.tileId;
+        if (c === "y") return COLOR_INFO.yellow.tileId;
+        if (c === "g") return COLOR_INFO.green.tileId;
         return 0;
       });
     });
@@ -150,12 +249,80 @@ var Level = {
   },
 
   isColorUnlocked: function (color) {
-    return color === "red" ? Level.redUnlocked : Level.orangeUnlocked;
+    if (color === "red") return Level.redUnlocked;
+    if (color === "orange") return Level.orangeUnlocked;
+    if (color === "yellow") return Level.yellowUnlocked;
+    if (color === "green") return Level.greenUnlocked;
+    if (color === "blue") return Level.blueUnlocked;
+    return false;
   },
 
   unlockColor: function (color) {
     if (color === "red") Level.redUnlocked = true;
     if (color === "orange") Level.orangeUnlocked = true;
+    if (color === "yellow") Level.yellowUnlocked = true;
+    if (color === "green") Level.greenUnlocked = true;
+    if (color === "blue") Level.blueUnlocked = true;
+  },
+
+  isOnGreenBounce: function (entity) {
+    if (!Level.greenUnlocked) return false;
+    var row = Math.floor((entity.y + entity.h + TILE_EPSILON) / TILE_SIZE);
+    var col0 = Math.floor(entity.x / TILE_SIZE);
+    var col1 = Math.floor((entity.x + entity.w - TILE_EPSILON) / TILE_SIZE);
+    for (var col = col0; col <= col1; col++) {
+      if (Level.tileAt(col, row) === COLOR_INFO.green.tileId) return true;
+    }
+    return false;
+  },
+
+  updatePortals: function (hero, dt, entryVx, entryVy) {
+    Level.portalCooldown = Math.max(0, Level.portalCooldown - dt);
+    if (!Level.blueUnlocked || Level.portalCooldown > 0) return false;
+
+    for (var i = 0; i < Level.portals.length; i++) {
+      var source = Level.portals[i];
+      if (!rectsOverlap(hero, source)) continue;
+
+      var target = null;
+      for (var j = 0; j < Level.portals.length; j++) {
+        if (i !== j && Level.portals[j].pair === source.pair) {
+          target = Level.portals[j];
+          break;
+        }
+      }
+      if (!target) return false;
+
+      var speed = Math.max(Math.sqrt(entryVx * entryVx + entryVy * entryVy), 360);
+      Particles.portal(
+        source.x + source.w / 2,
+        source.y + source.h / 2
+      );
+      hero.x =
+        target.x +
+        target.w / 2 -
+        hero.w / 2 +
+        target.nx * (target.w / 2 + hero.w / 2 + 4);
+      hero.y =
+        target.y +
+        target.h / 2 -
+        hero.h / 2 +
+        target.ny * (target.h / 2 + hero.h / 2 + 4);
+      hero.vx = target.nx * speed;
+      hero.vy = target.ny * speed;
+      hero.onGround = false;
+      hero.touchingWallLeft = false;
+      hero.touchingWallRight = false;
+      hero.groundCoyote = 0;
+      Level.portalCooldown = 0.3;
+      Particles.portal(
+        target.x + target.w / 2,
+        target.y + target.h / 2
+      );
+      camera.shake(4, 0.18);
+      return true;
+    }
+    return false;
   },
 
   hasRequiredColors: function () {
@@ -331,6 +498,15 @@ var Level = {
     camera.zoomSpeed = 0;
   },
 
+  skipLevel: function (hero, direction) {
+    var nextIndex = clamp(
+      Level.currentIndex + direction,
+      0,
+      Level.levels.length - 1
+    );
+    if (nextIndex !== Level.currentIndex) Level.resetLevel(hero, nextIndex);
+  },
+
   draw: function (ctx, camera) {
     var cameraX = Math.round(camera.x);
     var cameraY = Math.round(camera.y);
@@ -378,7 +554,30 @@ var Level = {
       "orange",
       seamOverlap
     );
+    Level.drawColorTiles(
+      ctx,
+      cameraX,
+      cameraY,
+      startCol,
+      endCol,
+      startRow,
+      endRow,
+      "yellow",
+      seamOverlap
+    );
+    Level.drawColorTiles(
+      ctx,
+      cameraX,
+      cameraY,
+      startCol,
+      endCol,
+      startRow,
+      endRow,
+      "green",
+      seamOverlap
+    );
     Level.drawMovingPlatforms(ctx, cameraX, cameraY);
+    Level.drawPortals(ctx, cameraX, cameraY);
 
     Level.drawCrystals(ctx, cameraX, cameraY);
     Level.drawDoor(ctx, cameraX, cameraY);
@@ -397,15 +596,26 @@ var Level = {
   ) {
     var info = COLOR_INFO[color];
     var unlocked = Level.isColorUnlocked(color);
+    var filled = info.disappears ? !unlocked : unlocked;
     for (var row = startRow; row < endRow; row++) {
       for (var col = startCol; col < endCol; col++) {
         if (Level.tileAt(col, row) !== info.tileId) continue;
         var x = col * TILE_SIZE - cameraX;
         var y = row * TILE_SIZE - cameraY;
-        ctx.globalAlpha = unlocked ? 1 : 0.2;
+        ctx.globalAlpha = filled ? 1 : 0.2;
         ctx.fillStyle = info.color;
         ctx.fillRect(x, y, TILE_SIZE + seamOverlap, TILE_SIZE + seamOverlap);
-        if (!unlocked) {
+        if (filled && info.bounces) {
+          ctx.globalAlpha = 0.85;
+          ctx.strokeStyle = info.highlight;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x + 8, y + 20);
+          ctx.lineTo(x + 16, y + 11);
+          ctx.lineTo(x + 24, y + 20);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+        } else if (!filled) {
           ctx.globalAlpha = 0.55;
           ctx.strokeStyle = info.highlight;
           ctx.setLineDash([5, 5]);
@@ -461,6 +671,38 @@ var Level = {
       ctx.lineTo(x + platform.w / 2 + 10, y + 8);
       ctx.lineTo(x + platform.w / 2 + 3, y + 12);
       ctx.fill();
+      ctx.restore();
+    }
+  },
+
+  drawPortals: function (ctx, cameraX, cameraY) {
+    for (var i = 0; i < Level.portals.length; i++) {
+      var portal = Level.portals[i];
+      var x = portal.x + portal.w / 2 - cameraX;
+      var y = portal.y + portal.h / 2 - cameraY;
+      var vertical = portal.nx !== 0;
+      var pulse = 1 + Math.sin(Level.time * 7 + i * Math.PI) * 0.12;
+
+      ctx.save();
+      ctx.globalAlpha = Level.blueUnlocked ? 1 : 0.25;
+      ctx.strokeStyle = COLOR_INFO.blue.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(
+        x,
+        y,
+        (vertical ? 5 : 13) * pulse,
+        (vertical ? 13 : 5) * pulse,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+      ctx.strokeStyle = COLOR_INFO.blue.highlight;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(x, y, vertical ? 4 : 11, vertical ? 11 : 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
   },
@@ -531,15 +773,19 @@ var Level = {
     ctx.font = "bold 15px monospace";
     ctx.fillStyle = "#f0e9ee";
 
-    var message = "FIND THE RED CRYSTAL";
-    if (
-      Level.redUnlocked &&
-      !Level.orangeUnlocked &&
-      Level.requiredColors.indexOf("orange") !== -1
-    ) {
-      message = "FIND THE ORANGE CRYSTAL";
-      ctx.fillStyle = COLOR_INFO.orange.color;
-    } else if (Level.hasRequiredColors()) {
+    var nextColor = null;
+    for (var i = 0; i < Level.requiredColors.length; i++) {
+      if (!Level.isColorUnlocked(Level.requiredColors[i])) {
+        nextColor = Level.requiredColors[i];
+        break;
+      }
+    }
+
+    var message;
+    if (nextColor) {
+      message = "FIND THE " + nextColor.toUpperCase() + " CRYSTAL";
+      if (nextColor !== "red") ctx.fillStyle = COLOR_INFO[nextColor].color;
+    } else {
       message = "COLOURS RESTORED - REACH THE DOOR";
       ctx.fillStyle = COLOR_INFO[Level.requiredColors[Level.requiredColors.length - 1]].color;
     }

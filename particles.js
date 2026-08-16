@@ -3,14 +3,54 @@ var Particles = {
   items: [],
   wallTimer: 0,
   rainbowIndex: 0,
-  rainbow: ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#0a84ff", "#af52de"],
+  rainbow: ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#af52de"],
 
   nextRainbow: function () {
-    var colorCount = Level.orangeUnlocked ? 2 : Level.redUnlocked ? 1 : 0;
+    var colorCount = Level.blueUnlocked
+      ? 5
+      : Level.greenUnlocked
+        ? 4
+        : Level.yellowUnlocked
+        ? 3
+        : Level.orangeUnlocked
+          ? 2
+          : Level.redUnlocked
+            ? 1
+            : 0;
     if (colorCount === 0) return "#c7c2c8";
     var color = Particles.rainbow[Particles.rainbowIndex % colorCount];
     Particles.rainbowIndex = (Particles.rainbowIndex + 1) % colorCount;
     return color;
+  },
+
+  bounce: function (hero) {
+    for (var i = 0; i < 18; i++) {
+      var direction = Math.random() * 2 - 1;
+      Particles.add(
+        hero.x + hero.w / 2 + direction * hero.w,
+        hero.y + hero.h,
+        direction * (120 + Math.random() * 180),
+        -90 - Math.random() * 230,
+        0.45 + Math.random() * 0.25,
+        3 + Math.random() * 4,
+        i % 3 === 0 ? COLOR_INFO.green.highlight : COLOR_INFO.green.color
+      );
+    }
+  },
+
+  portal: function (x, y) {
+    for (var i = 0; i < 12; i++) {
+      var angle = (i / 12) * Math.PI * 2;
+      Particles.add(
+        x,
+        y,
+        Math.cos(angle) * (70 + Math.random() * 90),
+        Math.sin(angle) * (70 + Math.random() * 90),
+        0.3 + Math.random() * 0.2,
+        2 + Math.random() * 3,
+        i % 3 === 0 ? COLOR_INFO.blue.highlight : COLOR_INFO.blue.color
+      );
+    }
   },
 
   add: function (x, y, vx, vy, life, size, color) {

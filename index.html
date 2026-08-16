@@ -2,6 +2,9 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>platformer</title>
   <script type="application/javascript">
     version = Math.floor(Math.random() * 1000);
@@ -23,6 +26,12 @@
       <button class="control-button d-right" data-key="ArrowRight" aria-label="Move right">&#9654;</button>
     </div>
     <button class="control-button jump-button" data-key="Space" aria-label="Jump">JUMP</button>
+  </div>
+  <div id="fullscreen-help" role="dialog" aria-label="Fullscreen instructions" hidden>
+    <div class="fullscreen-help-panel">
+      <p>For full screen on iPhone, tap Share, choose <strong>Add to Home Screen</strong>, then open the game from your Home Screen.</p>
+      <button id="fullscreen-help-close">GOT IT</button>
+    </div>
   </div>
 </body>
 </html>

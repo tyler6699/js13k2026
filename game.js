@@ -41,13 +41,21 @@ function toggleFullscreen() {
     : root.requestFullscreen || root.webkitRequestFullscreen;
 
   if (action) {
-    var result = action.call(active ? document : root);
-    if (result && result.catch) {
-      result.catch(function () {
-        // Fullscreen may be unavailable or blocked by the browser.
-      });
+    try {
+      var result = action.call(active ? document : root);
+      if (result && result.catch) {
+        result.catch(showFullscreenHelp);
+      }
+    } catch (e) {
+      showFullscreenHelp();
     }
+  } else {
+    showFullscreenHelp();
   }
+}
+
+function showFullscreenHelp() {
+  document.getElementById("fullscreen-help").hidden = false;
 }
 
 function loop(now) {
