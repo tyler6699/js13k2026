@@ -2,7 +2,7 @@
 
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
-The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, camera effects, fullscreen support, and five hand-authored levels.
+The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, camera effects, fullscreen support, and six hand-authored levels.
 
 ## Playing the game
 
@@ -34,6 +34,7 @@ On iPhone versions that do not allow page fullscreen, the **FULL** button explai
 | Yellow | `Y` | `y` | Yellow blocks begin solid, then disappear and become non-solid—the inverse of red. |
 | Green | `G` | `g` | Green launch pads become solid. Landing from above produces an automatic `850 px/s` super-bounce and refreshes the double jump. |
 | Blue | `B` | `u`, `v`, `<`, `>` | Linked portals activate. Entering one preserves speed and redirects it through its partner. |
+| Indigo | `I` | `i` | Indigo blocks become solid. Stepping on one warns for `0.3s`, hides it for `1.5s`, then safely restores it. |
 
 The player, trail, particles, HUD, and exit door gain each restored colour as the level progresses.
 
@@ -91,10 +92,22 @@ Levels are objects in the `Level.levels` array near the top of `level.js`:
 The ordered list of crystals required to open the door. It also controls the HUD's crystal prompts.
 
 ```js
-colors: ["red", "orange", "yellow", "green", "blue"]
+colors: ["red", "orange", "yellow", "green", "blue", "indigo"]
 ```
 
 Every listed colour must have its corresponding crystal in `rows`; otherwise the door can never open. Colours may be omitted when a level is intended to focus on a smaller set of mechanics.
+
+#### Moving-platform settings
+
+Levels containing an `M` can configure all of their moving platforms with these properties:
+
+```js
+platformRange: 4,   // travel distance in tiles
+platformSpeed: 80,  // pixels per second
+platformAxis: "x", // "x" for horizontal or "y" for vertical
+```
+
+If a property is omitted, it defaults to a four-tile horizontal movement at 80 pixels per second.
 
 #### `rows`
 
@@ -133,8 +146,12 @@ An array of strings containing the map. Each character represents one `32 × 32`
 | `G` | Green crystal |
 | `g` | Green super-bounce block |
 | `B` | Blue crystal |
+| `I` | Indigo crystal |
+| `i` | Indigo crumble block; after restoration it vanishes briefly when stepped on |
 
 Crystal cells and the door are entities placed in otherwise empty cells; they do not create solid tiles themselves.
+
+Each indigo block has its own crumble timer, so a run of `i` characters collapses progressively. A hidden block waits to restore while the player overlaps its cell.
 
 ### Blue portal markup
 
@@ -202,6 +219,7 @@ Before considering a map finished, verify that:
 - Green pads have enough unobstructed space for an eight-tile bounce.
 - Portal markers occur in complete pairs and their scan order creates the intended links.
 - Portal exits leave enough clearance for the player hitbox.
+- Indigo runs give the player time to react before the first block crumbles.
 - The door has a supporting platform and is reachable after all required colors are restored.
 - Gaps contain spikes or another intentional recovery/failure route.
 - The longest row gives the camera the intended level width.
@@ -219,81 +237,3 @@ Use `+` and `-` to move quickly between levels during testing, and press `F1` to
 7. Test the intended route as well as falls, backtracking, and collecting crystals in an unexpected order.
 
 Because levels are read directly from source, no registration or build command is required.
-
-## Building for a Roadroller submission
-
-Keep the JavaScript files separate while developing. For submission, use [Terser](https://github.com/terser/terser) to combine and minify them in one global scope, then pass that result to [Roadroller](https://github.com/lifthrasiir/roadroller).
-
-### Install the build tools
-
-```powershell
-npm install --save-dev terser roadroller
-```
-
-### Combine and minify the JavaScript
-
-The input order must match the order in `index.html` because the game uses shared globals:
-
-```powershell
-npx terser `
-  keys.js utility.js tile.js level.js entity.js `
-  particles.js hero.js camera.js game.js debug.js `
-  --compress passes=3 `
-  --mangle `
-  --output build/game.min.js
-```
-
-Terser reads these files sequentially and produces one minified file at `build/game.min.js`.
-
-### Run Roadroller
-
-Use the normal optimizer for quick test builds:
-
-```powershell
-npx roadroller build/game.min.js -o build/game.js
-```
-
-For the final submission, try the more thorough level-two optimization:
-
-```powershell
-npx roadroller -O2 build/game.min.js -o build/game.js
-```
-
-Roadroller can take noticeably longer at `-O2`, but may produce a smaller result. Always test the generated `build/game.js`; successful minification does not guarantee that the packed build behaves correctly.
-
-### Use the packed file
-
-In the submission copy of `index.html`, replace the dynamic block that loads the ten source files with one script:
-
-```html
-<script src="build/game.js"></script>
-```
-
-The existing `body onload="startGame()"` can remain because `startGame` is deliberately left as a global function.
-
-Do not enable Terser top-level mangling without reserving `startGame`, or the name used by the HTML may be changed. Avoid property mangling until the result has been tested carefully because the game uses browser and canvas API properties.
-
-Do not use Roadroller's `--dirty` option with the current HTML. The canvas has the single-letter ID `c`, which can collide with the free variables used by dirty-mode decoder code.
-
-### Submission pipeline
-
-```text
-Source JavaScript files
-        ↓ Terser
-build/game.min.js
-        ↓ Roadroller
-build/game.js
-        ↓ ZIP with the submission HTML and CSS
-submission.zip
-```
-
-Measure the final ZIP rather than only the raw JavaScript. The HTML, CSS, filenames, directory entries, and archive compression all contribute to the submitted size.
-
-Before packaging the final build:
-
-- Play every level using the Roadrolled file.
-- Test keyboard and mobile controls.
-- Test fullscreen and the iPhone standalone fallback.
-- Verify green bounce and blue portal momentum.
-- Check that `+`, `-`, and `F1` still work in the packed build.
-- Open the browser console and confirm there are no runtime errors.

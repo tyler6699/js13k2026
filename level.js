@@ -1,13 +1,16 @@
 // level.js - level layouts, colour pickups, hazards, and exits
-// space = empty, 1 = ground, r/o/y/g = colour platforms
-// C/O/Y/G/B = colour crystals, u/v/</> = portals, D = door, ^ = spikes
+// space = empty, 1 = ground, r/o/y/g/i = colour platforms
+// C/O/Y/G/B/I = colour crystals, u/v/</> = portals, D = door, ^ = spikes
 var LEVEL_COMPLETE_DELAY = 2;
+var INDIGO_CRUMBLE_DELAY = 0.3;
+var INDIGO_RESPAWN_DELAY = 1.5;
 var COLOR_INFO = {
   red: { tileId: 2, color: "#ff304f", highlight: "#ffb3bf" },
   orange: { tileId: 4, color: "#e66a19", highlight: "#ffc08a" },
   yellow: { tileId: 5, color: "#ffd43b", highlight: "#fff3a3", disappears: true },
   green: { tileId: 6, color: "#34c759", highlight: "#a8f0b8", bounces: true },
   blue: { color: "#0a84ff", highlight: "#8dc8ff" },
+  indigo: { tileId: 7, color: "#5856d6", highlight: "#b8b7ff", crumbles: true },
 };
 
 var Level = {
@@ -29,6 +32,9 @@ var Level = {
     },
     {
       colors: ["red", "orange"],
+      platformRange: 4,
+      platformSpeed: 80,
+      platformAxis: "x",
       rows: [
         "",
         "",
@@ -45,6 +51,9 @@ var Level = {
     },
     {
       colors: ["red", "orange", "yellow"],
+      platformRange: 7,
+      platformSpeed: 110,
+      platformAxis: "x",
       rows: [
         "",
         "",
@@ -52,8 +61,8 @@ var Level = {
         "                                               y     D",
         "                                            Y  y",
         "                                        oooooo y 111111111",
-        "                                  oooooo",
-        "                          O  ooooo",
+        "                          M        o",
+        "                          O  o",
         "                    rrrrrrrr",
         "                  C",
         "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
@@ -95,6 +104,24 @@ var Level = {
         "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
       ],
     },
+    {
+      colors: ["red", "orange", "yellow", "green", "blue", "indigo"],
+      rows: [
+        "",
+        "",
+        "                                                       B",
+        "                                                   1111111111         >                               D",
+        "                                               y                             I",
+        "                                               y                       1111111111iiiiiiiiiiiiiiii  111111111",
+        "                                            Y  y",
+        "                                        oooooo y",
+        "                                  oooooo       y",
+        "                          O  ooooo             y",
+        "                    rrrrrrrr                   yG  ggg        u",
+        "                  C                          11111111111    11111",
+        "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      ],
+    },
   ],
   currentIndex: 0,
   cols: 0,
@@ -106,9 +133,12 @@ var Level = {
   yellowUnlocked: false,
   greenUnlocked: false,
   blueUnlocked: false,
+  indigoUnlocked: false,
   crystals: null,
   movingPlatforms: null,
   portals: null,
+  indigoTiles: null,
+  indigoTileStates: null,
   portalCooldown: 0,
   door: null,
   complete: false,
@@ -131,9 +161,12 @@ var Level = {
     Level.yellowUnlocked = false;
     Level.greenUnlocked = false;
     Level.blueUnlocked = false;
+    Level.indigoUnlocked = false;
     Level.crystals = [];
     Level.movingPlatforms = [];
     Level.portals = [];
+    Level.indigoTiles = [];
+    Level.indigoTileStates = {};
     Level.portalCooldown = 0;
     Level.door = null;
     Level.complete = false;
@@ -156,12 +189,14 @@ var Level = {
             ? "red"
             : c === "O"
               ? "orange"
-              : c === "Y"
-                ? "yellow"
-                : c === "G"
-                  ? "green"
-                  : c === "B"
-                    ? "blue"
+            : c === "Y"
+              ? "yellow"
+              : c === "G"
+                ? "green"
+                : c === "B"
+                  ? "blue"
+                  : c === "I"
+                    ? "indigo"
                     : null;
         if (crystalColor) {
           Level.crystals.push({
@@ -188,9 +223,16 @@ var Level = {
             startY: rowIndex * TILE_SIZE,
             w: TILE_SIZE * 2,
             h: TILE_SIZE / 2,
-            axis: "x",
-            range: TILE_SIZE * 4,
-            speed: 80,
+            axis: definition.platformAxis || "x",
+            range:
+              TILE_SIZE *
+              (definition.platformRange === undefined
+                ? 4
+                : definition.platformRange),
+            speed:
+              definition.platformSpeed === undefined
+                ? 80
+                : definition.platformSpeed,
             offset: 0,
             direction: 1,
             dx: 0,
@@ -224,6 +266,17 @@ var Level = {
         if (c === "o") return COLOR_INFO.orange.tileId;
         if (c === "y") return COLOR_INFO.yellow.tileId;
         if (c === "g") return COLOR_INFO.green.tileId;
+        if (c === "i") {
+          var indigoTile = {
+            col: colIndex,
+            row: rowIndex,
+            phase: 0,
+            timer: 0,
+          };
+          Level.indigoTiles.push(indigoTile);
+          Level.indigoTileStates[rowIndex * Level.cols + colIndex] = indigoTile;
+          return COLOR_INFO.indigo.tileId;
+        }
         return 0;
       });
     });
@@ -238,6 +291,16 @@ var Level = {
   },
 
   tileAt: function (col, row) {
+    if (row < 0 || row >= Level.rows || col < 0 || col >= Level.cols) return 1;
+    var tileId = Level.map[row][col];
+    if (tileId === COLOR_INFO.indigo.tileId) {
+      var state = Level.indigoTileStates[row * Level.cols + col];
+      if (state && state.phase === 2) return 0;
+    }
+    return tileId;
+  },
+
+  baseTileAt: function (col, row) {
     if (row < 0 || row >= Level.rows || col < 0 || col >= Level.cols) return 1;
     return Level.map[row][col];
   },
@@ -254,6 +317,7 @@ var Level = {
     if (color === "yellow") return Level.yellowUnlocked;
     if (color === "green") return Level.greenUnlocked;
     if (color === "blue") return Level.blueUnlocked;
+    if (color === "indigo") return Level.indigoUnlocked;
     return false;
   },
 
@@ -263,6 +327,48 @@ var Level = {
     if (color === "yellow") Level.yellowUnlocked = true;
     if (color === "green") Level.greenUnlocked = true;
     if (color === "blue") Level.blueUnlocked = true;
+    if (color === "indigo") Level.indigoUnlocked = true;
+  },
+
+  updateIndigoTiles: function (hero, dt) {
+    if (!Level.indigoUnlocked) return;
+
+    for (var i = 0; i < Level.indigoTiles.length; i++) {
+      var tile = Level.indigoTiles[i];
+      if (tile.phase === 0) continue;
+
+      tile.timer -= dt;
+      if (tile.timer > 0) continue;
+
+      if (tile.phase === 1) {
+        tile.phase = 2;
+        tile.timer = INDIGO_RESPAWN_DELAY;
+      } else {
+        var tileRect = {
+          x: tile.col * TILE_SIZE,
+          y: tile.row * TILE_SIZE,
+          w: TILE_SIZE,
+          h: TILE_SIZE,
+        };
+        if (!rectsOverlap(hero, tileRect)) {
+          tile.phase = 0;
+          tile.timer = 0;
+        }
+      }
+    }
+
+    if (!hero.onGround) return;
+    var row = Math.floor((hero.y + hero.h + TILE_EPSILON) / TILE_SIZE);
+    var col0 = Math.floor(hero.x / TILE_SIZE);
+    var col1 = Math.floor((hero.x + hero.w - TILE_EPSILON) / TILE_SIZE);
+    for (var col = col0; col <= col1; col++) {
+      if (Level.baseTileAt(col, row) !== COLOR_INFO.indigo.tileId) continue;
+      var state = Level.indigoTileStates[row * Level.cols + col];
+      if (state && state.phase === 0) {
+        state.phase = 1;
+        state.timer = INDIGO_CRUMBLE_DELAY;
+      }
+    }
   },
 
   isOnGreenBounce: function (entity) {
@@ -441,6 +547,8 @@ var Level = {
       Level.collectCrystal(crystal);
     }
 
+    Level.updateIndigoTiles(hero, dt);
+
     if (Level.hasRequiredColors() && rectsOverlap(hero, Level.door)) {
       Level.complete = true;
       Level.completeTimer = LEVEL_COMPLETE_DELAY;
@@ -576,6 +684,17 @@ var Level = {
       "green",
       seamOverlap
     );
+    Level.drawColorTiles(
+      ctx,
+      cameraX,
+      cameraY,
+      startCol,
+      endCol,
+      startRow,
+      endRow,
+      "indigo",
+      seamOverlap
+    );
     Level.drawMovingPlatforms(ctx, cameraX, cameraY);
     Level.drawPortals(ctx, cameraX, cameraY);
 
@@ -596,13 +715,24 @@ var Level = {
   ) {
     var info = COLOR_INFO[color];
     var unlocked = Level.isColorUnlocked(color);
-    var filled = info.disappears ? !unlocked : unlocked;
+    var baseFilled = info.disappears ? !unlocked : unlocked;
     for (var row = startRow; row < endRow; row++) {
       for (var col = startCol; col < endCol; col++) {
-        if (Level.tileAt(col, row) !== info.tileId) continue;
+        if (Level.baseTileAt(col, row) !== info.tileId) continue;
         var x = col * TILE_SIZE - cameraX;
         var y = row * TILE_SIZE - cameraY;
+        var filled = baseFilled;
+        var state = null;
+        if (info.crumbles) {
+          state = Level.indigoTileStates[row * Level.cols + col];
+          if (state && state.phase === 2) filled = false;
+        }
         ctx.globalAlpha = filled ? 1 : 0.2;
+        if (state && state.phase === 1) {
+          ctx.globalAlpha = 0.35 + (Math.sin(Level.time * 35) + 1) * 0.25;
+        } else if (state && state.phase === 2) {
+          ctx.globalAlpha = 0.06;
+        }
         ctx.fillStyle = info.color;
         ctx.fillRect(x, y, TILE_SIZE + seamOverlap, TILE_SIZE + seamOverlap);
         if (filled && info.bounces) {
@@ -615,8 +745,22 @@ var Level = {
           ctx.lineTo(x + 24, y + 20);
           ctx.stroke();
           ctx.lineWidth = 1;
+        } else if (filled && info.crumbles) {
+          ctx.globalAlpha = state && state.phase === 1 ? 1 : 0.65;
+          ctx.strokeStyle = info.highlight;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x + 8, y + 3);
+          ctx.lineTo(x + 14, y + 12);
+          ctx.lineTo(x + 10, y + 19);
+          ctx.lineTo(x + 18, y + 29);
+          ctx.moveTo(x + 14, y + 12);
+          ctx.lineTo(x + 24, y + 8);
+          ctx.lineTo(x + 21, y + 19);
+          ctx.stroke();
+          ctx.lineWidth = 1;
         } else if (!filled) {
-          ctx.globalAlpha = 0.55;
+          ctx.globalAlpha = state && state.phase === 2 ? 0.08 : 0.55;
           ctx.strokeStyle = info.highlight;
           ctx.setLineDash([5, 5]);
           ctx.strokeRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2);

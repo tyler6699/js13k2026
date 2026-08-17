@@ -8,5 +8,6 @@ function isSolidTileId(id) {
   if (id === 4) return Level.orangeUnlocked;
   if (id === 5) return !Level.yellowUnlocked;
   if (id === 6) return Level.greenUnlocked;
+  if (id === 7) return Level.indigoUnlocked;
   return false;
 }

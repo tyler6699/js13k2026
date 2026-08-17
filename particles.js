@@ -3,10 +3,12 @@ var Particles = {
   items: [],
   wallTimer: 0,
   rainbowIndex: 0,
-  rainbow: ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#af52de"],
+  rainbow: ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#5856d6", "#af52de"],
 
   nextRainbow: function () {
-    var colorCount = Level.blueUnlocked
+    var colorCount = Level.indigoUnlocked
+      ? 6
+      : Level.blueUnlocked
       ? 5
       : Level.greenUnlocked
         ? 4

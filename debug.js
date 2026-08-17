@@ -35,6 +35,7 @@ var Debug = {
       "yellowUnlocked: " + Level.yellowUnlocked,
       "greenUnlocked: " + Level.greenUnlocked,
       "blueUnlocked: " + Level.blueUnlocked,
+      "indigoUnlocked: " + Level.indigoUnlocked,
       "level: " + (Level.currentIndex + 1),
       "levelComplete: " + Level.complete,
       "levelFailed: " + Level.failed,

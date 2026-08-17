@@ -18,7 +18,7 @@ var GROUND_COYOTE_TIME = 0.1; // grace window after leaving the ground where a j
 var TRAIL_SPACING = 6; // px between rainbow trail samples
 var TRAIL_LIFE = 0.42; // seconds before a trail sample disappears
 var TRAIL_BAND_WIDTH = 3;
-var TRAIL_COLORS = ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#af52de"];
+var TRAIL_COLORS = ["#ff304f", "#e66a19", "#ffd43b", "#34c759", "#0a84ff", "#5856d6", "#af52de"];
 var SHADOW_MAX_DISTANCE = 240;
 var SQUISHINESS = 1.2; // 0 = rigid, 1 = original deformation, higher = squishier
 
@@ -344,7 +344,9 @@ Hero.prototype.draw = function (ctx, camera) {
     var fade = Math.min(previous.life, sample.life) / TRAIL_LIFE;
 
     ctx.globalAlpha = fade * 0.85;
-    var trailColors = Level.blueUnlocked
+    var trailColors = Level.indigoUnlocked
+      ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3], TRAIL_COLORS[4], TRAIL_COLORS[5]]
+      : Level.blueUnlocked
       ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3], TRAIL_COLORS[4]]
       : Level.greenUnlocked
         ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3]]
@@ -378,7 +380,9 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = Level.blueUnlocked
+  ctx.fillStyle = Level.indigoUnlocked
+    ? "#5856d6"
+    : Level.blueUnlocked
     ? "#0a84ff"
     : Level.greenUnlocked
       ? "#34c759"
