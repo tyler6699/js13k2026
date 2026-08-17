@@ -34,7 +34,7 @@ On iPhone versions that do not allow page fullscreen, the **FULL** button explai
 | Green | `G` | `g` | Green launch pads become solid. Landing from above produces an automatic `850 px/s` super-bounce and refreshes the double jump. |
 | Blue | `B` | `u`, `v`, `<`, `>` | Linked portals activate. Entering one preserves speed and redirects it through its partner. |
 | Indigo | `I` | `i` | Indigo blocks become solid. Stepping on one warns for `0.3s`, hides it for `1.5s`, then safely restores it. |
-| Violet | `V` | — | The unstable final crystal starts a five-second countdown. Reach the door before it explodes. |
+| Violet | `V` | — | The unstable final crystal starts a five-second countdown. Reach the door before it creates a large rainbow explosion. |
 
 The player, trail, particles, HUD, and exit door gain each restored colour as the level progresses.
 

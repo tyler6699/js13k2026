@@ -113,13 +113,13 @@ var Level = {
         "",
         "                                                       B",
         "                                                     11111111         >                               D",
-        "                                               y                             I V",
+        "                                               y                             I ",
         "                                               y                       1111111111iiiiiiiiiiiiiiii  111111111",
         "                                            Y  y",
         "                                        oooooo y",
         "                                  oooooo       y",
-        "                          O  ooooo             y",
-        "                    rrrrrrrr                   yG  ggg        u",
+        "                          O  ooooo             y                                                  V",
+        "                    rrrrrrrr                   yG  ggg        u                               11111111111",
         "                  C                          11111111111    11111",
         "1111111111yyyyyy1111^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
       ],
@@ -552,7 +552,7 @@ var Level = {
       Level.violetTimer -= dt;
       if (Level.violetTimer <= 0) {
         Level.violetTimer = 0;
-        Level.fail(hero, COLOR_INFO.violet.color, "BOOM - RESTARTING");
+        Level.fail(hero, "rainbow", "BOOM - RESTARTING");
         return;
       }
     }
@@ -600,22 +600,26 @@ var Level = {
 
   fail: function (hero, color, message) {
     if (Level.failed || Level.complete) return;
+    var rainbowExplosion = color === "rainbow";
     Level.failed = true;
     Level.failureMessage = message || "YOU FELL - RESTARTING";
     Level.restartTimer = 0.85;
     hero.vx = 0;
     hero.vy = 0;
-    camera.shake(8, 0.35);
+    camera.shake(rainbowExplosion ? 16 : 8, rainbowExplosion ? 0.6 : 0.35);
 
-    for (var i = 0; i < 14; i++) {
+    var count = rainbowExplosion ? 48 : 14;
+    for (var i = 0; i < count; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 180 + Math.random() * 320;
       Particles.add(
         hero.x + hero.w / 2,
-        hero.y + hero.h,
-        (Math.random() * 2 - 1) * 150,
-        -70 - Math.random() * 130,
-        0.35 + Math.random() * 0.3,
-        2 + Math.random() * 4,
-        color || "#ded8e0"
+        rainbowExplosion ? hero.y + hero.h / 2 : hero.y + hero.h,
+        rainbowExplosion ? Math.cos(angle) * speed : (Math.random() * 2 - 1) * 150,
+        rainbowExplosion ? Math.sin(angle) * speed : -70 - Math.random() * 130,
+        (rainbowExplosion ? 0.7 : 0.35) + Math.random() * 0.3,
+        (rainbowExplosion ? 5 : 2) + Math.random() * (rainbowExplosion ? 5 : 4),
+        rainbowExplosion ? Particles.rainbow[i % Particles.rainbow.length] : color || "#ded8e0"
       );
     }
   },
