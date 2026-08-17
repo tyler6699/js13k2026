@@ -11,7 +11,7 @@ function startGame() {
   window.addEventListener("resize", resize);
 
   Keys.init();
-  Debug.init();
+  // Debug.init();
   Level.init();
 
   hero = new Hero(64, 64);
@@ -129,5 +129,5 @@ function draw() {
   ctx.restore();
 
   Level.drawHud(ctx, canvas);
-  Debug.draw(ctx, hero);
+  // Debug.draw(ctx, hero);
 }

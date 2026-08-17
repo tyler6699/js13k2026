@@ -344,7 +344,9 @@ Hero.prototype.draw = function (ctx, camera) {
     var fade = Math.min(previous.life, sample.life) / TRAIL_LIFE;
 
     ctx.globalAlpha = fade * 0.85;
-    var trailColors = Level.indigoUnlocked
+    var trailColors = Level.violetUnlocked
+      ? TRAIL_COLORS
+      : Level.indigoUnlocked
       ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3], TRAIL_COLORS[4], TRAIL_COLORS[5]]
       : Level.blueUnlocked
       ? [TRAIL_COLORS[0], TRAIL_COLORS[1], TRAIL_COLORS[2], TRAIL_COLORS[3], TRAIL_COLORS[4]]
@@ -380,7 +382,9 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = Level.indigoUnlocked
+  ctx.fillStyle = Level.violetUnlocked
+    ? "#af52de"
+    : Level.indigoUnlocked
     ? "#5856d6"
     : Level.blueUnlocked
     ? "#0a84ff"
@@ -393,6 +397,12 @@ Hero.prototype.draw = function (ctx, camera) {
         : Level.redUnlocked
           ? "#e63946"
           : "#aaa5ad";
+  if (
+    Level.violetUnlocked &&
+    Math.sin(Level.time * (18 - Level.violetTimer * 2)) > 0.35
+  ) {
+    ctx.fillStyle = COLOR_INFO.violet.highlight;
+  }
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
   var taperedBottom =

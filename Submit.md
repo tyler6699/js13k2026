@@ -15,7 +15,7 @@ The input order must match the order in `index.html` because the game uses share
 ```powershell
 npx terser `
   keys.js utility.js tile.js level.js entity.js `
-  particles.js hero.js camera.js game.js debug.js `
+  particles.js hero.js camera.js game.js`
   --compress passes=3 `
   --mangle `
   --output build/game.min.js

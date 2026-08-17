@@ -1,9 +1,10 @@
 // level.js - level layouts, colour pickups, hazards, and exits
 // space = empty, 1 = ground, r/o/y/g/i = colour platforms
-// C/O/Y/G/B/I = colour crystals, u/v/</> = portals, D = door, ^ = spikes
+// C/O/Y/G/B/I/V = colour crystals, u/v/</> = portals, D = door, ^ = spikes
 var LEVEL_COMPLETE_DELAY = 2;
 var INDIGO_CRUMBLE_DELAY = 0.3;
 var INDIGO_RESPAWN_DELAY = 1.5;
+var VIOLET_EXPLOSION_TIME = 5;
 var COLOR_INFO = {
   red: { tileId: 2, color: "#ff304f", highlight: "#ffb3bf" },
   orange: { tileId: 4, color: "#e66a19", highlight: "#ffc08a" },
@@ -11,6 +12,7 @@ var COLOR_INFO = {
   green: { tileId: 6, color: "#34c759", highlight: "#a8f0b8", bounces: true },
   blue: { color: "#0a84ff", highlight: "#8dc8ff" },
   indigo: { tileId: 7, color: "#5856d6", highlight: "#b8b7ff", crumbles: true },
+  violet: { color: "#af52de", highlight: "#e4b5fa" },
 };
 
 var Level = {
@@ -92,7 +94,7 @@ var Level = {
         "",
         "",
         "                                                       B",
-        "                                                   1111111111       >      D",
+        "                                                     11111111       >      D",
         "                                               y",
         "                                               y                      1111111111",
         "                                            Y  y",
@@ -105,13 +107,13 @@ var Level = {
       ],
     },
     {
-      colors: ["red", "orange", "yellow", "green", "blue", "indigo"],
+      colors: ["red", "orange", "yellow", "green", "blue", "indigo", "violet"],
       rows: [
         "",
         "",
         "                                                       B",
-        "                                                   1111111111         >                               D",
-        "                                               y                             I",
+        "                                                     11111111         >                               D",
+        "                                               y                             I V",
         "                                               y                       1111111111iiiiiiiiiiiiiiii  111111111",
         "                                            Y  y",
         "                                        oooooo y",
@@ -134,6 +136,8 @@ var Level = {
   greenUnlocked: false,
   blueUnlocked: false,
   indigoUnlocked: false,
+  violetUnlocked: false,
+  violetTimer: 0,
   crystals: null,
   movingPlatforms: null,
   portals: null,
@@ -145,6 +149,7 @@ var Level = {
   completeTimer: 0,
   gameComplete: false,
   failed: false,
+  failureMessage: "YOU FELL - RESTARTING",
   restartTimer: 0,
   time: 0,
 
@@ -162,6 +167,8 @@ var Level = {
     Level.greenUnlocked = false;
     Level.blueUnlocked = false;
     Level.indigoUnlocked = false;
+    Level.violetUnlocked = false;
+    Level.violetTimer = 0;
     Level.crystals = [];
     Level.movingPlatforms = [];
     Level.portals = [];
@@ -173,6 +180,7 @@ var Level = {
     Level.completeTimer = 0;
     Level.gameComplete = false;
     Level.failed = false;
+    Level.failureMessage = "YOU FELL - RESTARTING";
     Level.restartTimer = 0;
     Level.time = 0;
 
@@ -197,7 +205,9 @@ var Level = {
                   ? "blue"
                   : c === "I"
                     ? "indigo"
-                    : null;
+                    : c === "V"
+                      ? "violet"
+                      : null;
         if (crystalColor) {
           Level.crystals.push({
             color: crystalColor,
@@ -318,6 +328,7 @@ var Level = {
     if (color === "green") return Level.greenUnlocked;
     if (color === "blue") return Level.blueUnlocked;
     if (color === "indigo") return Level.indigoUnlocked;
+    if (color === "violet") return Level.violetUnlocked;
     return false;
   },
 
@@ -328,6 +339,7 @@ var Level = {
     if (color === "green") Level.greenUnlocked = true;
     if (color === "blue") Level.blueUnlocked = true;
     if (color === "indigo") Level.indigoUnlocked = true;
+    if (color === "violet") Level.violetUnlocked = true;
   },
 
   updateIndigoTiles: function (hero, dt) {
@@ -536,6 +548,15 @@ var Level = {
       return;
     }
 
+    if (Level.violetUnlocked) {
+      Level.violetTimer -= dt;
+      if (Level.violetTimer <= 0) {
+        Level.violetTimer = 0;
+        Level.fail(hero, COLOR_INFO.violet.color, "BOOM - RESTARTING");
+        return;
+      }
+    }
+
     if (Level.touchesHazard(hero)) {
       Level.fail(hero);
       return;
@@ -561,6 +582,7 @@ var Level = {
   collectCrystal: function (crystal) {
     var info = COLOR_INFO[crystal.color];
     Level.unlockColor(crystal.color);
+    if (crystal.color === "violet") Level.violetTimer = VIOLET_EXPLOSION_TIME;
     camera.shake(7, 0.35);
     for (var i = 0; i < 18; i++) {
       var angle = (i / 18) * Math.PI * 2;
@@ -576,9 +598,10 @@ var Level = {
     }
   },
 
-  fail: function (hero) {
+  fail: function (hero, color, message) {
     if (Level.failed || Level.complete) return;
     Level.failed = true;
+    Level.failureMessage = message || "YOU FELL - RESTARTING";
     Level.restartTimer = 0.85;
     hero.vx = 0;
     hero.vy = 0;
@@ -592,7 +615,7 @@ var Level = {
         -70 - Math.random() * 130,
         0.35 + Math.random() * 0.3,
         2 + Math.random() * 4,
-        "#ded8e0"
+        color || "#ded8e0"
       );
     }
   },
@@ -933,7 +956,10 @@ var Level = {
       message = "COLOURS RESTORED - REACH THE DOOR";
       ctx.fillStyle = COLOR_INFO[Level.requiredColors[Level.requiredColors.length - 1]].color;
     }
-    if (Level.failed) message = "YOU FELL - RESTARTING";
+    if (Level.violetUnlocked && !Level.failed) {
+      message = "REACH THE DOOR - " + Level.violetTimer.toFixed(1) + "s";
+    }
+    if (Level.failed) message = Level.failureMessage;
     if (Level.complete) message = "LEVEL " + (Level.currentIndex + 1) + " COMPLETE";
     if (Level.gameComplete) message = "ALL LEVELS COMPLETE";
     ctx.fillText("LEVEL " + (Level.currentIndex + 1) + "  -  " + message, canvas.width / 2, 26);

@@ -21,7 +21,6 @@ Falling onto spikes restarts the level. Completed levels advance automatically a
 | Toggle fullscreen | `F` | **FULL** button |
 | Next level | `+` or numpad `+` | — |
 | Previous level | `-` or numpad `-` | — |
-| Toggle debug display | `F1` | — |
 
 On iPhone versions that do not allow page fullscreen, the **FULL** button explains how to launch the game in standalone mode using **Share → Add to Home Screen**.
 
@@ -35,6 +34,7 @@ On iPhone versions that do not allow page fullscreen, the **FULL** button explai
 | Green | `G` | `g` | Green launch pads become solid. Landing from above produces an automatic `850 px/s` super-bounce and refreshes the double jump. |
 | Blue | `B` | `u`, `v`, `<`, `>` | Linked portals activate. Entering one preserves speed and redirects it through its partner. |
 | Indigo | `I` | `i` | Indigo blocks become solid. Stepping on one warns for `0.3s`, hides it for `1.5s`, then safely restores it. |
+| Violet | `V` | — | The unstable final crystal starts a five-second countdown. Reach the door before it explodes. |
 
 The player, trail, particles, HUD, and exit door gain each restored colour as the level progresses.
 
@@ -63,7 +63,6 @@ Opening `index.html` directly may work for basic play, but a local server more c
 | `particles.js` | Implements movement, crystal, bounce, and portal effects. |
 | `camera.js` | Follows the player and applies zoom and shake. |
 | `keys.js` | Handles keyboard and touch input. |
-| `debug.js` | Draws the optional `F1` state display. |
 | `game.css` | Scales the fixed game canvas and lays out touch controls. |
 
 ## Creating levels
@@ -92,7 +91,7 @@ Levels are objects in the `Level.levels` array near the top of `level.js`:
 The ordered list of crystals required to open the door. It also controls the HUD's crystal prompts.
 
 ```js
-colors: ["red", "orange", "yellow", "green", "blue", "indigo"]
+colors: ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
 ```
 
 Every listed colour must have its corresponding crystal in `rows`; otherwise the door can never open. Colours may be omitted when a level is intended to focus on a smaller set of mechanics.
@@ -148,6 +147,7 @@ An array of strings containing the map. Each character represents one `32 × 32`
 | `B` | Blue crystal |
 | `I` | Indigo crystal |
 | `i` | Indigo crumble block; after restoration it vanishes briefly when stepped on |
+| `V` | Violet crystal; starts a five-second explosion countdown |
 
 Crystal cells and the door are entities placed in otherwise empty cells; they do not create solid tiles themselves.
 

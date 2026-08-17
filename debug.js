@@ -36,6 +36,8 @@ var Debug = {
       "greenUnlocked: " + Level.greenUnlocked,
       "blueUnlocked: " + Level.blueUnlocked,
       "indigoUnlocked: " + Level.indigoUnlocked,
+      "violetUnlocked: " + Level.violetUnlocked,
+      "violetTimer: " + Level.violetTimer.toFixed(2),
       "level: " + (Level.currentIndex + 1),
       "levelComplete: " + Level.complete,
       "levelFailed: " + Level.failed,
