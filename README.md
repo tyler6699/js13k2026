@@ -2,7 +2,7 @@
 
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
-The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, camera effects, fullscreen support, and six hand-authored levels.
+The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, camera effects, a run timer and death counter, fullscreen support, and seven hand-authored levels.
 
 ## Playing the game
 
