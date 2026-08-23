@@ -2,7 +2,7 @@
 
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
-The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, camera effects, a run timer and death counter, fullscreen support, and seven hand-authored levels.
+The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, particles, generated Web Audio effects, camera effects, a run timer and death counter, fullscreen support, and seven hand-authored levels.
 
 ## Playing the game
 
@@ -61,6 +61,7 @@ Opening `index.html` directly may work for basic play, but a local server more c
 | `entity.js` | Provides tile collision and movement resolution. |
 | `hero.js` | Implements player movement, jumps, green bouncing, animation, and drawing. |
 | `particles.js` | Implements movement, crystal, bounce, and portal effects. |
+| `sound.js` | Synthesizes jump, pickup, portal, death, and completion effects with Web Audio. |
 | `camera.js` | Follows the player and applies zoom and shake. |
 | `keys.js` | Handles keyboard and touch input. |
 | `game.css` | Scales the fixed game canvas and lays out touch controls. |

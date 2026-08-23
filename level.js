@@ -556,6 +556,7 @@ var Level = {
         target.x + target.w / 2,
         target.y + target.h / 2
       );
+      Sound.play("portal");
       camera.shake(4, 0.18);
       return true;
     }
@@ -695,6 +696,7 @@ var Level = {
       Level.completeTimer = LEVEL_COMPLETE_DELAY;
       hero.vx = 0;
       hero.vy = 0;
+      Sound.play("complete");
       camera.shake(5, 0.25);
     }
   },
@@ -702,6 +704,7 @@ var Level = {
   collectCrystal: function (crystal) {
     var info = COLOR_INFO[crystal.color];
     Level.unlockColor(crystal.color);
+    Sound.play("crystal");
     if (crystal.color === "violet") Level.violetTimer = VIOLET_EXPLOSION_TIME;
     camera.shake(7, 0.35);
     for (var i = 0; i < 18; i++) {
@@ -727,6 +730,7 @@ var Level = {
     Level.restartTimer = 0.85;
     hero.vx = 0;
     hero.vy = 0;
+    Sound.play("die");
     camera.shake(rainbowExplosion ? 16 : 8, rainbowExplosion ? 0.6 : 0.35);
 
     var count = rainbowExplosion ? 48 : 14;

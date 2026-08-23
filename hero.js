@@ -144,6 +144,7 @@ Hero.prototype.update = function (dt) {
       this.visualScaleX = squishScale(0.78);
       this.visualScaleY = squishScale(1.24);
       Particles.jump(this, "ground");
+      Sound.play("jump");
       this.groundCoyote = 0; // consumed - stops a single press re-triggering next frame
     } else if (onWall) {
       this.vy = -WALL_JUMP_VY;
@@ -158,6 +159,7 @@ Hero.prototype.update = function (dt) {
       this.visualScaleX = squishScale(0.76);
       this.visualScaleY = squishScale(1.26);
       Particles.jump(this, "wall");
+      Sound.play("wall");
     } else if (this.airJumpsLeft > 0) {
       this.vy = -JUMP_SPEED;
       this.airJumpsLeft--;
@@ -169,6 +171,7 @@ Hero.prototype.update = function (dt) {
       this.somersaultTime = SOMERSAULT_DURATION;
       this.somersaultDirection = this.facing;
       Particles.jump(this, "air");
+      Sound.play("air");
     }
   }
 
@@ -223,6 +226,7 @@ Hero.prototype.update = function (dt) {
     this.visualScaleX = squishScale(1.5);
     this.visualScaleY = squishScale(0.55);
     Particles.bounce(this);
+    Sound.play("bounce");
     camera.shake(7, 0.24);
   }
   this.updateTrail(dt, trailStartX, trailStartY);
@@ -237,6 +241,7 @@ Hero.prototype.update = function (dt) {
     this.visualScaleX = squishScale(clamp(1 + landingSpeed / 1100, 1.12, 1.42));
     this.visualScaleY = squishScale(clamp(1 - landingSpeed / 1500, 0.62, 0.86));
     Particles.land(this, landingSpeed);
+    if (landingSpeed > 220) Sound.play("land", clamp(landingSpeed / 700, 0.25, 0.75));
   }
 
   var visualReturn = 1 - Math.exp(-13 * dt);

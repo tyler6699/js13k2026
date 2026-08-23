@@ -10,6 +10,7 @@ function startGame() {
   resize();
   window.addEventListener("resize", resize);
 
+  Sound.init();
   Keys.init();
   // Debug.init();
   Level.init();
