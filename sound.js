@@ -52,9 +52,10 @@ var Sound = {
   },
 
   play: function (name, volume) {
-    Sound.unlock();
-    if (!Sound.context) return;
-    var v = (volume === undefined ? 1 : volume) * 0.08;
+    // Gameplay can trigger sounds (such as the initial landing) before the
+    // player interacts. Never create, resume, or start audio in that state.
+    if (!Sound.context || Sound.context.state !== "running") return;
+    var v = (volume === undefined ? 1 : volume) * 0.16;
     switch (name) {
       case "jump":
         Sound.tone(190, 430, 0.12, "square", 0, v);

@@ -32,44 +32,6 @@ body {
   display: none;
 }
 
-#fullscreen-help {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(10, 12, 18, 0.82);
-  color: white;
-  font: 16px/1.45 system-ui, sans-serif;
-  text-align: center;
-  touch-action: none;
-}
-
-#fullscreen-help[hidden] {
-  display: none;
-}
-
-.fullscreen-help-panel {
-  max-width: 320px;
-  padding: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  border-radius: 14px;
-  background: #171b25;
-}
-
-#fullscreen-help-close {
-  min-width: 96px;
-  min-height: 44px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  border-radius: 10px;
-  background: #343b4c;
-  color: white;
-  font: bold 14px/1 system-ui, sans-serif;
-  touch-action: none;
-}
-
 @media (hover: none) and (pointer: coarse) {
   #mobile-controls {
     position: fixed;
@@ -102,31 +64,16 @@ body {
     transform: scale(0.94);
   }
 
-  .fullscreen-button {
-    top: max(16px, env(safe-area-inset-top));
-    right: max(16px, env(safe-area-inset-right));
-    width: 64px;
-    height: 44px;
-    border-radius: 10px;
-    font-size: 12px;
-  }
-
-  .fullscreen-button[hidden] {
-    display: none;
-  }
-
   .d-pad {
     position: absolute;
     bottom: max(20px, env(safe-area-inset-bottom));
     left: max(20px, env(safe-area-inset-left));
     width: 174px;
-    height: 174px;
+    height: 58px;
   }
 
-  .d-up { left: 58px; top: 0; }
-  .d-left { left: 0; top: 58px; }
-  .d-down { left: 58px; top: 116px; }
-  .d-right { left: 116px; top: 58px; }
+  .d-left { left: 0; top: 0; }
+  .d-right { right: 0; top: 0; }
 
   .jump-button {
     right: max(28px, env(safe-area-inset-right));

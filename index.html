@@ -2,13 +2,10 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>platformer</title>
   <script type="application/javascript">
     version = Math.floor(Math.random() * 1000);
-    var files = ["keys", "utility", "tile", "sound", "level", "entity", "particles", "hero", "camera", "game"];
+    var files = ["keys", "utility", "tile", "song", "sound", "level", "entity", "particles", "hero", "camera", "game"];
     for (f of files) {
       document.write("<script type='application/javascript' src='" + f + ".js?" + version + "'\><\/script>");
     }
@@ -18,20 +15,11 @@
 <body onload="startGame()">
   <canvas id="c"></canvas>
   <div id="mobile-controls" aria-label="Touch controls">
-    <button id="fullscreen-button" class="control-button fullscreen-button" aria-label="Toggle fullscreen">FULL</button>
     <div class="d-pad" aria-label="Direction pad">
-      <button class="control-button d-up" data-key="ArrowUp" aria-label="Up">&#9650;</button>
       <button class="control-button d-left" data-key="ArrowLeft" aria-label="Move left">&#9664;</button>
-      <button class="control-button d-down" data-key="ArrowDown" aria-label="Down">&#9660;</button>
       <button class="control-button d-right" data-key="ArrowRight" aria-label="Move right">&#9654;</button>
     </div>
     <button class="control-button jump-button" data-key="Space" aria-label="Jump">JUMP</button>
-  </div>
-  <div id="fullscreen-help" role="dialog" aria-label="Fullscreen instructions" hidden>
-    <div class="fullscreen-help-panel">
-      <p>For full screen on iPhone, tap Share, choose <strong>Add to Home Screen</strong>, then open the game from your Home Screen.</p>
-      <button id="fullscreen-help-close">GOT IT</button>
-    </div>
   </div>
 </body>
 </html>

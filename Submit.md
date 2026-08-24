@@ -14,7 +14,7 @@ The input order must match the order in `index.html` because the game uses share
 
 ```powershell
 npx terser `
-  keys.js utility.js tile.js sound.js level.js entity.js `
+  keys.js utility.js tile.js song.js sound.js level.js entity.js `
   particles.js hero.js camera.js game.js`
   --compress passes=3 `
   --mangle `
@@ -41,7 +41,7 @@ Roadroller can take noticeably longer at `-O2`, but may produce a smaller result
 
 ### Use the packed file
 
-In the submission copy of `index.html`, replace the dynamic block that loads the ten source files with one script:
+In the submission copy of `index.html`, replace the dynamic block that loads the eleven source files with one script:
 
 ```html
 <script src="build/game.js"></script>
@@ -71,7 +71,6 @@ Before packaging the final build:
 
 - Play every level using the Roadrolled file.
 - Test keyboard and mobile controls.
-- Test fullscreen and the iPhone standalone fallback.
 - Verify green bounce and blue portal momentum.
 - Check that `+`, `-`, and `F1` still work in the packed build.
 - Open the browser console and confirm there are no runtime errors.

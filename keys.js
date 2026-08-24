@@ -21,17 +21,6 @@ var Keys = {
     window.addEventListener("keydown", function (e) {
       Keys.down[e.code] = true;
 
-      if (
-        e.code === "KeyF" &&
-        !e.repeat &&
-        !e.altKey &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        toggleFullscreen();
-      }
-
       var skipDirection =
         e.key === "+" || e.code === "NumpadAdd"
           ? 1
@@ -57,23 +46,6 @@ var Keys = {
     for (var i = 0; i < buttons.length; i++) {
       Keys.bindTouchButton(buttons[i]);
     }
-
-    var fullscreenButton = document.getElementById("fullscreen-button");
-    var standalone =
-      window.navigator.standalone ||
-      window.matchMedia("(display-mode: standalone)").matches;
-    fullscreenButton.hidden = standalone;
-    fullscreenButton.addEventListener("pointerup", function (e) {
-      e.preventDefault();
-      toggleFullscreen();
-    });
-
-    document
-      .getElementById("fullscreen-help-close")
-      .addEventListener("pointerup", function (e) {
-        e.preventDefault();
-        document.getElementById("fullscreen-help").hidden = true;
-      });
 
     window.addEventListener("blur", function () {
       for (var code in Keys.down) Keys.down[code] = false;

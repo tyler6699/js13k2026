@@ -10,6 +10,10 @@ function startGame() {
   resize();
   window.addEventListener("resize", resize);
 
+  genAudio();
+
+  window.addEventListener("keydown", startMusic);
+  window.addEventListener("pointerdown", startMusic);
   Sound.init();
   Keys.init();
   // Debug.init();
@@ -32,31 +36,6 @@ function resize() {
   if (camera) {
     camera.resize(canvas.width, canvas.height);
   }
-}
-
-function toggleFullscreen() {
-  var root = document.documentElement;
-  var active = document.fullscreenElement || document.webkitFullscreenElement;
-  var action = active
-    ? document.exitFullscreen || document.webkitExitFullscreen
-    : root.requestFullscreen || root.webkitRequestFullscreen;
-
-  if (action) {
-    try {
-      var result = action.call(active ? document : root);
-      if (result && result.catch) {
-        result.catch(showFullscreenHelp);
-      }
-    } catch (e) {
-      showFullscreenHelp();
-    }
-  } else {
-    showFullscreenHelp();
-  }
-}
-
-function showFullscreenHelp() {
-  document.getElementById("fullscreen-help").hidden = false;
 }
 
 function loop(now) {
