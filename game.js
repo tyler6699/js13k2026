@@ -97,6 +97,21 @@ function draw() {
   ctx.fillStyle = "#7ec0ee";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Two distant ridgelines drift at different speeds for cheap parallax depth.
+  for (var layer = 0; layer < 2; layer++) {
+    ctx.fillStyle = layer ? "#72a8ca" : "#a7cee4";
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    for (var x = -200; x < 1100; x += 100) {
+      ctx.lineTo(
+        x - ((camera.x * (layer + 1)) / 12) % 200,
+        320 + layer * 70 - (x % 200 ? 45 : 0) - (camera.y * (layer + 1)) / 24
+      );
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.fill();
+  }
+
   ctx.save();
   ctx.translate(Math.round(camera.shakeX), Math.round(camera.shakeY));
   ctx.translate(canvas.width / 2, canvas.height / 2);
