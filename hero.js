@@ -419,5 +419,29 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.lineTo(wallEdge, 0);
   ctx.closePath();
   ctx.fill();
+
+  // Two ears frame an upright horn like a tiny front-facing unicorn head.
+  for (var ear = -1; ear < 2; ear += 2) {
+    ctx.beginPath();
+    ctx.moveTo(ear * 9, -this.h);
+    ctx.lineTo(ear * 7 + this.facing * 3, -this.h - 7);
+    ctx.lineTo(ear * 3, -this.h);
+    ctx.fill();
+  }
+  ctx.fillRect(this.facing * 9, -this.h + 10, this.facing * 6, 8);
+
+  // The horn and eyes stay centred while the muzzle turns with the unicorn.
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.moveTo(-4, -this.h);
+  ctx.lineTo(this.facing * 7, -this.h - 18);
+  ctx.lineTo(4, -this.h);
+  ctx.fill();
+  ctx.fillRect(-8, -this.h + 6, 6, 7);
+  ctx.fillRect(2, -this.h + 6, 6, 7);
+  ctx.fillStyle = "#17151f";
+  ctx.fillRect(-6 + this.facing, -this.h + 8, 3, 4);
+  ctx.fillRect(3 + this.facing, -this.h + 8, 3, 4);
+  ctx.fillRect(this.facing * 13, -this.h + 12, this.facing * 3, 3);
   ctx.restore();
 };
