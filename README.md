@@ -47,6 +47,28 @@ Then visit [http://localhost:8000](http://localhost:8000).
 
 Opening `index.html` directly may work for basic play, but a local server more closely matches deployment behavior and is required by some browser APIs.
 
+## Building the minified JavaScript
+
+In PowerShell, first add the bundled Node.js runtime to the current terminal session:
+
+```powershell
+$env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;$env:Path"
+```
+
+From the project root, combine and minify the source files with Terser. The file order must remain the same as the loading order in `index.html` because the game uses shared globals:
+
+```powershell
+& ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress passes=3 --mangle --output build/game.min.js
+```
+
+Then create the final Roadroller build using level-two optimization:
+
+```powershell
+& ".\node_modules\.bin\roadroller.cmd" -O2 build/game.min.js -o build/game.js
+```
+
+The `PATH` change applies only to the current PowerShell window. Do not enable Terser top-level mangling or Roadroller's `--dirty` option for this project. See [`Submit.md`](Submit.md) for the complete submission notes.
+
 ## Project structure
 
 | File | Purpose |

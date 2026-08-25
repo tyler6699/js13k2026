@@ -387,7 +387,7 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.translate(0, this.h / 2);
   ctx.rotate(this.visualTilt);
   ctx.scale(this.visualScaleX, this.visualScaleY);
-  ctx.fillStyle = Level.violetUnlocked
+  var characterColor = Level.violetUnlocked
     ? "#af52de"
     : Level.indigoUnlocked
     ? "#5856d6"
@@ -402,12 +402,49 @@ Hero.prototype.draw = function (ctx, camera) {
         : Level.redUnlocked
           ? "#e63946"
           : "#aaa5ad";
+  ctx.fillStyle = characterColor;
   if (
     Level.violetUnlocked &&
     Math.sin(Level.time * (18 - Level.violetTimer * 2)) > 0.35
   ) {
-    ctx.fillStyle = COLOR_INFO.violet.highlight;
+    characterColor = COLOR_INFO.violet.highlight;
+    ctx.fillStyle = characterColor;
   }
+  var face = this.facing;
+  var headTop = -this.h;
+  var outlineWidth = 1.1;
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = outlineWidth;
+  ctx.lineJoin = "round";
+
+  // A pale, jagged mane sits behind the head on the side away from the muzzle.
+  ctx.fillStyle = "#f4f0ff";
+  ctx.beginPath();
+  ctx.moveTo(-face * 8, headTop + 3);
+  ctx.lineTo(-face * 15, headTop + 7);
+  ctx.lineTo(-face * 10, headTop + 10);
+  ctx.lineTo(-face * 16, headTop + 15);
+  ctx.lineTo(-face * 10, headTop + 18);
+  ctx.lineTo(-face * 14, headTop + 23);
+  ctx.lineTo(-face * 8, headTop + 24);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Tall, narrow ears create a horse-like silhouette and are tucked behind the head.
+  ctx.fillStyle = characterColor;
+  var earCenters = [-face * 6, face * 4];
+  for (var ear = 0; ear < earCenters.length; ear++) {
+    var earX = earCenters[ear];
+    ctx.beginPath();
+    ctx.moveTo(earX - 2.5, headTop + 1);
+    ctx.quadraticCurveTo(earX - 2, headTop - 8, earX, headTop - 11);
+    ctx.quadraticCurveTo(earX + 3, headTop - 5, earX + 2.5, headTop + 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
   var wallEdge = this.wallShapeSide * this.w / 2;
   var freeEdge = -this.wallShapeSide * this.w / 2;
   var taperedBottom =
@@ -419,29 +456,68 @@ Hero.prototype.draw = function (ctx, camera) {
   ctx.lineTo(wallEdge, 0);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
-  // Two ears frame an upright horn like a tiny front-facing unicorn head.
-  for (var ear = -1; ear < 2; ear += 2) {
-    ctx.beginPath();
-    ctx.moveTo(ear * 9, -this.h);
-    ctx.lineTo(ear * 7 + this.facing * 3, -this.h - 7);
-    ctx.lineTo(ear * 3, -this.h);
-    ctx.fill();
-  }
-  ctx.fillRect(this.facing * 9, -this.h + 10, this.facing * 6, 8);
+  // The long muzzle covers the head's side stroke, then only its exposed edge is outlined.
+  ctx.fillStyle = characterColor;
+  ctx.beginPath();
+  ctx.moveTo(face * 7, headTop + 8);
+  ctx.quadraticCurveTo(face * 14, headTop + 9, face * 16, headTop + 12);
+  ctx.quadraticCurveTo(face * 18, headTop + 15, face * 15, headTop + 18);
+  ctx.quadraticCurveTo(face * 11, headTop + 20, face * 7, headTop + 16);
+  ctx.closePath();
+  ctx.fill();
 
-  // The horn and eyes stay centred while the muzzle turns with the unicorn.
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = outlineWidth;
+  ctx.beginPath();
+  ctx.moveTo(face * 10, headTop + 8.5);
+  ctx.quadraticCurveTo(face * 15, headTop + 9.5, face * 16, headTop + 12);
+  ctx.quadraticCurveTo(face * 18, headTop + 15, face * 15, headTop + 18);
+  ctx.quadraticCurveTo(face * 11, headTop + 19.5, face * 9, headTop + 17);
+  ctx.stroke();
+
+  // A long, banded horn rises from the forehead in the direction the unicorn faces.
+  ctx.fillStyle = "#fff";
+  ctx.strokeStyle = "#17151f";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(face, headTop);
+  ctx.lineTo(face * 9, headTop - 19);
+  ctx.lineTo(face * 6, headTop);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(face * 3, headTop - 5);
+  ctx.lineTo(face * 7, headTop - 6);
+  ctx.moveTo(face * 5, headTop - 10);
+  ctx.lineTo(face * 8, headTop - 11);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // One almond-shaped eye keeps the face clearly in profile.
   ctx.fillStyle = "#fff";
   ctx.beginPath();
-  ctx.moveTo(-4, -this.h);
-  ctx.lineTo(this.facing * 7, -this.h - 18);
-  ctx.lineTo(4, -this.h);
+  ctx.ellipse(face * 5, headTop + 7, 3.2, 2.5, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillRect(-8, -this.h + 6, 6, 7);
-  ctx.fillRect(2, -this.h + 6, 6, 7);
   ctx.fillStyle = "#17151f";
-  ctx.fillRect(-6 + this.facing, -this.h + 8, 3, 4);
-  ctx.fillRect(3 + this.facing, -this.h + 8, 3, 4);
-  ctx.fillRect(this.facing * 13, -this.h + 12, this.facing * 3, 3);
+  ctx.beginPath();
+  ctx.ellipse(face * 6, headTop + 7, 1.2, 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // A small nostril and mouth finish the horse muzzle without squaring it off.
+  ctx.beginPath();
+  ctx.ellipse(face * 15, headTop + 13.5, 1.2, 0.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#17151f";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(face * 13, headTop + 17.5);
+  ctx.quadraticCurveTo(face * 15, headTop + 18.5, face * 16, headTop + 16.8);
+  ctx.stroke();
   ctx.restore();
 };
