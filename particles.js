@@ -57,6 +57,22 @@ var Particles = {
     }
   },
 
+  titleBurst: function (x, y) {
+    for (var i = 0; i < 42; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 70 + Math.random() * 190;
+      Particles.add(
+        x,
+        y,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed,
+        0.65 + Math.random() * 0.55,
+        2 + Math.random() * 4,
+        Particles.rainbow[i % Particles.rainbow.length]
+      );
+    }
+  },
+
   add: function (x, y, vx, vy, life, size, color) {
     Particles.items.push({
       x: x,

@@ -1,5 +1,9 @@
 // game.js - canvas setup + main loop
 var canvas, ctx, camera, hero, lastTime, wallRideShakeTimer;
+var titleScreen = true;
+var titleTime = 0;
+var titleBurstTimer = 0.25;
+var titleCamera = { x: 0, y: 0 };
 var GAME_WIDTH = 800;
 var GAME_HEIGHT = 480;
 
@@ -14,6 +18,7 @@ function startGame() {
 
   window.addEventListener("keydown", startMusic);
   window.addEventListener("pointerdown", startMusic);
+  window.addEventListener("pointerdown", startFromTitle);
   Sound.init();
   Keys.init();
   // Debug.init();
@@ -25,6 +30,13 @@ function startGame() {
 
   lastTime = performance.now();
   requestAnimationFrame(loop);
+}
+
+function startFromTitle() {
+  if (!titleScreen) return;
+  titleScreen = false;
+  Particles.items.length = 0;
+  document.body.classList.remove("title-screen");
 }
 
 function resize() {
@@ -49,6 +61,20 @@ function loop(now) {
 }
 
 function update(dt) {
+  if (titleScreen) {
+    titleTime += dt;
+    titleBurstTimer -= dt;
+    if (titleBurstTimer <= 0) {
+      Particles.titleBurst(
+        90 + Math.random() * (GAME_WIDTH - 180),
+        70 + Math.random() * (GAME_HEIGHT - 170)
+      );
+      titleBurstTimer = 1.8 + Math.random() * 1.8;
+    }
+    Particles.update(dt);
+    return;
+  }
+
   if (Level.failed || Level.complete) {
     Level.update(hero, dt);
     Particles.update(dt);
@@ -94,6 +120,11 @@ function update(dt) {
 }
 
 function draw() {
+  if (titleScreen) {
+    drawTitleScreen();
+    return;
+  }
+
   ctx.fillStyle = "#7ec0ee";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -125,4 +156,52 @@ function draw() {
 
   Level.drawHud(ctx, canvas);
   // Debug.draw(ctx, hero);
+}
+
+function drawTitleScreen() {
+  var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#18264a");
+  gradient.addColorStop(1, "#39204f");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  Particles.draw(ctx, titleCamera);
+
+  ctx.fillStyle = "rgba(10, 14, 30, 0.78)";
+  ctx.fillRect(70, 80, 660, 320);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(70, 80, 660, 320);
+
+  var title = "UniCorn";
+  ctx.font = "900 82px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  var titleWidth = ctx.measureText(title).width;
+  var titleX = (canvas.width - titleWidth) / 2;
+  for (var i = 0; i < title.length; i++) {
+    var letter = title[i];
+    ctx.strokeStyle = "#0c1020";
+    ctx.lineWidth = 7;
+    ctx.strokeText(letter, titleX, 164);
+    ctx.fillStyle = Particles.rainbow[i];
+    ctx.fillText(letter, titleX, 164);
+    titleX += ctx.measureText(letter).width;
+  }
+
+  var bandWidth = 420 / Particles.rainbow.length;
+  for (var band = 0; band < Particles.rainbow.length; band++) {
+    ctx.fillStyle = Particles.rainbow[band];
+    ctx.fillRect(190 + band * bandWidth, 218, Math.ceil(bandWidth), 5);
+  }
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff";
+  ctx.font = "700 24px system-ui, sans-serif";
+  ctx.fillText("Collect all the crystals to save the Rainbow!", canvas.width / 2, 275);
+
+  ctx.globalAlpha = 0.65 + Math.sin(titleTime * 4) * 0.35;
+  ctx.font = "800 21px system-ui, sans-serif";
+  ctx.fillText("CLICK TO START", canvas.width / 2, 348);
+  ctx.globalAlpha = 1;
 }

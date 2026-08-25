@@ -32,6 +32,10 @@ body {
   display: none;
 }
 
+body.title-screen #mobile-controls {
+  display: none;
+}
+
 @media (hover: none) and (pointer: coarse) {
   #mobile-controls {
     position: fixed;
