@@ -664,6 +664,9 @@ var Level = {
           Level.resetLevel(hero, Level.currentIndex + 1);
         } else {
           Level.gameComplete = true;
+          titleScreen = true;
+          titleBurstTimer = 0;
+          document.body.classList.add("title-screen");
         }
       }
       return;

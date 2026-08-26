@@ -33,7 +33,7 @@ function startGame() {
 }
 
 function startFromTitle() {
-  if (!titleScreen) return;
+  if (!titleScreen || Level.gameComplete) return;
   titleScreen = false;
   Particles.items.length = 0;
   document.body.classList.remove("title-screen");
@@ -69,7 +69,7 @@ function update(dt) {
         90 + Math.random() * (GAME_WIDTH - 180),
         70 + Math.random() * (GAME_HEIGHT - 170)
       );
-      titleBurstTimer = 1.8 + Math.random() * 1.8;
+      titleBurstTimer = Level.gameComplete ? 0.6 : 1.8 + Math.random() * 1.8;
     }
     Particles.update(dt);
     return;
@@ -198,9 +198,15 @@ function drawTitleScreen() {
   ctx.textAlign = "center";
   ctx.fillStyle = "#fff";
   ctx.font = "700 24px system-ui, sans-serif";
-  ctx.fillText("Collect all the crystals to save the Rainbow!", canvas.width / 2, 275);
+  ctx.fillText(
+    Level.gameComplete
+      ? "You have saved the Rainbow!"
+      : "Collect all the crystals to save the Rainbow!",
+    canvas.width / 2,
+    275
+  );
 
-  ctx.globalAlpha = 0.65 + Math.sin(titleTime * 4) * 0.35;
+  ctx.globalAlpha = Level.gameComplete ? 0 : 0.65 + Math.sin(titleTime * 4) * 0.35;
   ctx.font = "800 21px system-ui, sans-serif";
   ctx.fillText("CLICK TO START", canvas.width / 2, 348);
   ctx.globalAlpha = 1;
