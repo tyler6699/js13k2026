@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UniCorn Level Editor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #111421;
+      color: #f7f5ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #111421, #261737);
+    }
+
+    header {
+      padding: 22px clamp(18px, 4vw, 48px) 18px;
+      border-top: 6px solid;
+      border-image: linear-gradient(90deg, #ff304f, #e66a19, #ffd43b, #34c759, #0a84ff, #5856d6, #af52de) 1;
+      background: #0d1020cc;
+    }
+
+    h1 { margin: 0 0 5px; font-size: clamp(25px, 4vw, 38px); }
+    p { margin: 0; color: #bbb7c8; }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 370px;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #ffffff20;
+      border-radius: 12px;
+      background: #111522e8;
+      box-shadow: 0 10px 30px #0005;
+    }
+
+    .toolbar, .size-controls, .output-actions {
+      display: flex;
+      align-items: end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toolbar { justify-content: space-between; margin-bottom: 14px; }
+
+    label {
+      display: grid;
+      gap: 4px;
+      color: #aaa6b8;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    input, button, textarea { font: inherit; }
+
+    input {
+      width: 84px;
+      padding: 8px 10px;
+      border: 1px solid #ffffff2b;
+      border-radius: 7px;
+      background: #090c16;
+      color: #fff;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: 1px solid #ffffff2b;
+      border-radius: 7px;
+      background: #24283a;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover { background: #30364d; }
+    button:focus-visible { outline: 2px solid #8dc8ff; outline-offset: 2px; }
+
+    .danger { color: #ffb3bf; }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .tile-button {
+      display: grid;
+      grid-template-columns: 25px auto;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px 6px 6px;
+      font-size: 12px;
+    }
+
+    .tile-button.selected {
+      border-color: #fff;
+      background: #3b415a;
+      box-shadow: 0 0 0 2px #ffffff25;
+    }
+
+    .swatch {
+      display: grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      border: 1px solid #ffffff42;
+      border-radius: 4px;
+      background: var(--tile-color);
+      color: var(--text-color, #fff);
+      font-weight: 900;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .grid-shell {
+      max-height: calc(100vh - 275px);
+      min-height: 350px;
+      overflow: auto;
+      border: 1px solid #ffffff20;
+      border-radius: 8px;
+      background: #080b14;
+    }
+
+    #grid {
+      display: grid;
+      width: max-content;
+      padding: 24px;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .cell {
+      display: grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      border: solid #262b3a;
+      border-width: 0 1px 1px 0;
+      background: var(--tile-color, #101522);
+      color: var(--text-color, #fff);
+      font: 800 12px/1 ui-monospace, monospace;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .cell:hover { outline: 2px solid #fff; outline-offset: -2px; z-index: 1; }
+    .cell.spawn { box-shadow: inset 0 0 0 2px #fff8; }
+    .cell.spawn:empty::after { content: "S"; color: #fff8; }
+
+    .hint {
+      margin: 10px 0 0;
+      color: #8f8a9f;
+      font-size: 12px;
+    }
+
+    aside h2 { margin: 0 0 6px; font-size: 18px; }
+    aside p { margin-bottom: 12px; font-size: 13px; line-height: 1.45; }
+
+    textarea {
+      width: 100%;
+      min-height: 480px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #ffffff24;
+      border-radius: 8px;
+      background: #080b14;
+      color: #d9f4ff;
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      tab-size: 2;
+    }
+
+    #status { min-height: 20px; margin-top: 8px; color: #a8f0b8; font-size: 13px; }
+
+    @media (max-width: 950px) {
+      main { grid-template-columns: 1fr; }
+      .grid-shell { max-height: 60vh; }
+      textarea { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>UniCorn Level Editor</h1>
+    <p>Choose a tile, then click and drag across the grid to paint your level.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="Level designer">
+      <div class="toolbar">
+        <div class="size-controls">
+          <label>Grid width
+            <input id="width" type="number" min="4" max="120" value="42" />
+          </label>
+          <label>Grid height
+            <input id="height" type="number" min="4" max="50" value="12" />
+          </label>
+          <button id="resize" type="button">Resize grid</button>
+        </div>
+        <button id="clear" class="danger" type="button">Clear level</button>
+      </div>
+
+      <div id="palette" class="palette" aria-label="Tile palette"></div>
+
+      <div class="grid-shell">
+        <div id="grid" aria-label="Level grid"></div>
+      </div>
+      <p class="hint">Spawn is fixed at column 2, row 2. Right-click paints with the eraser. Portal ends pair in reading order.</p>
+    </section>
+
+    <aside class="panel">
+      <h2>Generated level code</h2>
+      <p>Paste an existing level object and choose <strong>Load code</strong>, or copy the live output into the <code>Level.levels</code> array.</p>
+      <textarea id="output" spellcheck="false" aria-label="Generated or pasted level code"></textarea>
+      <div class="output-actions">
+        <button id="load" type="button">Load code</button>
+        <button id="copy" type="button">Copy code</button>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </aside>
+  </main>
+
+  <script>
+    const tileTypes = [
+      [" ", "Eraser", "#101522", "×"],
+      ["1", "Ground", "#272431"],
+      ["^", "Spikes", "#ded8e0", "▲", "#17151f"],
+      ["D", "Door", "#f6c453", "D", "#17151f"],
+      ["C", "Red crystal", "#ff304f"],
+      ["r", "Red block", "#e63946"],
+      ["O", "Orange crystal", "#ff8a3d"],
+      ["o", "Orange block", "#e66a19"],
+      ["M", "Moving platform", "#e66a19"],
+      ["Y", "Yellow crystal", "#ffd43b", "Y", "#17151f"],
+      ["y", "Yellow block", "#d8ad19", "y", "#17151f"],
+      ["G", "Green crystal", "#34c759"],
+      ["g", "Bounce block", "#239b43"],
+      ["B", "Blue crystal", "#0a84ff"],
+      ["u", "Portal up", "#0a84ff", "↑"],
+      ["v", "Portal down", "#0a84ff", "↓"],
+      ["<", "Portal left", "#0a84ff", "←"],
+      [">", "Portal right", "#0a84ff", "→"],
+      ["I", "Indigo crystal", "#5856d6"],
+      ["i", "Crumble block", "#4745b8"],
+      ["V", "Violet crystal", "#af52de"],
+    ];
+
+    const colors = [
+      ["C", "red"], ["O", "orange"], ["Y", "yellow"],
+      ["G", "green"], ["B", "blue"], ["I", "indigo"], ["V", "violet"],
+    ];
+    const tileMap = Object.fromEntries(tileTypes.map(tile => [tile[0], tile]));
+    const palette = document.querySelector("#palette");
+    const gridElement = document.querySelector("#grid");
+    const widthInput = document.querySelector("#width");
+    const heightInput = document.querySelector("#height");
+    const output = document.querySelector("#output");
+    const status = document.querySelector("#status");
+    let width = +widthInput.value;
+    let height = +heightInput.value;
+    let cells = createEmptyGrid(width, height);
+    let selectedTile = "1";
+    let drawing = false;
+    let drawTile = selectedTile;
+    let lastPainted = "";
+    let levelOptions = [];
+
+    function createEmptyGrid(newWidth, newHeight, oldCells = []) {
+      return Array.from({ length: newHeight }, (_, row) =>
+        Array.from({ length: newWidth }, (_, col) => oldCells[row]?.[col] || " ")
+      );
+    }
+
+    function selectTile(tile, button) {
+      selectedTile = tile;
+      document.querySelector(".tile-button.selected")?.classList.remove("selected");
+      button.classList.add("selected");
+    }
+
+    function renderPalette() {
+      tileTypes.forEach(tile => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "tile-button";
+        button.innerHTML = `<span class="swatch">${tile[3] || tile[0]}</span><span>${tile[1]}</span>`;
+        button.style.setProperty("--tile-color", tile[2]);
+        button.style.setProperty("--text-color", tile[4] || "#fff");
+        button.addEventListener("click", () => selectTile(tile[0], button));
+        palette.append(button);
+        if (tile[0] === selectedTile) button.classList.add("selected");
+      });
+    }
+
+    function renderCell(cell, row, col) {
+      const value = cells[row][col];
+      const tile = tileMap[value];
+      cell.textContent = value;
+      cell.classList.toggle("spawn", row === 2 && col === 2);
+      cell.style.setProperty("--tile-color", tile[2]);
+      cell.style.setProperty("--text-color", tile[4] || "#fff");
+      cell.title = `Column ${col}, row ${row}: ${tile[1]}`;
+    }
+
+    function renderGrid() {
+      gridElement.replaceChildren();
+      gridElement.style.gridTemplateColumns = `repeat(${width}, 25px)`;
+      const fragment = document.createDocumentFragment();
+      for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          renderCell(cell, row, col);
+          fragment.append(cell);
+        }
+      }
+      gridElement.append(fragment);
+      updateOutput();
+    }
+
+    function paint(cell) {
+      if (!cell?.classList.contains("cell")) return;
+      const row = +cell.dataset.row;
+      const col = +cell.dataset.col;
+      const paintKey = `${row}:${col}`;
+      if (paintKey === lastPainted) return;
+      lastPainted = paintKey;
+      cells[row][col] = drawTile;
+      renderCell(cell, row, col);
+      updateOutput();
+    }
+
+    function resizeGrid() {
+      const newWidth = Math.max(4, Math.min(120, parseInt(widthInput.value) || width));
+      const newHeight = Math.max(4, Math.min(50, parseInt(heightInput.value) || height));
+      widthInput.value = newWidth;
+      heightInput.value = newHeight;
+      cells = createEmptyGrid(newWidth, newHeight, cells);
+      width = newWidth;
+      height = newHeight;
+      renderGrid();
+    }
+
+    function makePlacements() {
+      const placements = [];
+      for (let row = 0; row < height; row++) {
+        let col = 0;
+        while (col < width) {
+          while (col < width && cells[row][col] === " ") col++;
+          if (col === width) break;
+          const start = col;
+          let end = col;
+          let gap = 0;
+          while (col < width && gap < 6) {
+            if (cells[row][col] === " ") gap++;
+            else {
+              end = col;
+              gap = 0;
+            }
+            col++;
+          }
+          placements.push([row, start, cells[row].slice(start, end + 1).join("")]);
+          col = end + 1;
+        }
+      }
+      return placements;
+    }
+
+    function updateOutput() {
+      const presentTiles = new Set(cells.flat());
+      const requiredColors = colors.filter(color => presentTiles.has(color[0])).map(color => color[1]);
+      const placements = makePlacements();
+      const optionLines = levelOptions.length ? levelOptions.join("\n") + "\n" : "";
+      const placementLines = placements.map(placement =>
+        `    [${placement[0]}, ${placement[1]}, ${JSON.stringify(placement[2])}],`
+      ).join("\n");
+      output.value = `{
+  colors: ${JSON.stringify(requiredColors)},
+${optionLines}  rows: makeLevelRows(${width}, ${height}, [${placementLines ? "\n" + placementLines + "\n  " : ""}]),
+},`;
+    }
+
+    function parseLevelCode(code) {
+      const header = /makeLevelRows\s*\(\s*(\d+)\s*,\s*(\d+)\s*,/g.exec(code);
+      if (!header) throw new Error("Could not find makeLevelRows(width, height, placements)." );
+      const newWidth = +header[1];
+      const newHeight = +header[2];
+      let position = header.index + header[0].length;
+
+      function skipSpace() {
+        while (/\s/.test(code[position] || "")) position++;
+      }
+
+      function parseValue() {
+        skipSpace();
+        if (code[position] === "[") return parseArray();
+        if (code[position] === '"') {
+          const start = position++;
+          while (position < code.length) {
+            if (code[position] === "\\") position += 2;
+            else if (code[position] === '"') {
+              position++;
+              return JSON.parse(code.slice(start, position));
+            }
+            else position++;
+          }
+          throw new Error("Unclosed tile string in placements.");
+        }
+        const number = /^-?\d+/.exec(code.slice(position));
+        if (!number) throw new Error(`Unexpected value near character ${position}.`);
+        position += number[0].length;
+        return +number[0];
+      }
+
+      function parseArray() {
+        const values = [];
+        skipSpace();
+        if (code[position] !== "[") throw new Error(`Expected an array near character ${position}.`);
+        position++;
+        skipSpace();
+        while (code[position] !== "]") {
+          values.push(parseValue());
+          skipSpace();
+          if (code[position] === ",") {
+            position++;
+            skipSpace();
+            if (code[position] === "]") break;
+          } else if (code[position] !== "]") {
+            throw new Error(`Expected a comma near character ${position}.`);
+          }
+        }
+        if (code[position] !== "]") throw new Error("Unclosed placements array.");
+        position++;
+        return values;
+      }
+
+      const placements = parseArray();
+      if (newWidth < 4 || newWidth > 120 || newHeight < 4 || newHeight > 50) {
+        throw new Error("Grid dimensions must be within 4–120 by 4–50.");
+      }
+      for (const placement of placements) {
+        if (!Array.isArray(placement) || placement.length !== 3 ||
+            !Number.isInteger(placement[0]) || !Number.isInteger(placement[1]) ||
+            typeof placement[2] !== "string") {
+          throw new Error("Each placement must be [row, column, \"tiles\"].");
+        }
+        const [row, col, tiles] = placement;
+        if (row < 0 || row >= newHeight || col < 0 || col + tiles.length > newWidth) {
+          throw new Error(`Placement [${row}, ${col}, ${JSON.stringify(tiles)}] is outside the grid.`);
+        }
+        for (const tile of tiles) {
+          if (!tileMap[tile]) throw new Error(`Unknown tile character: ${JSON.stringify(tile)}.`);
+        }
+      }
+      const options = [];
+      const range = /platformRange\s*:\s*(\d+)/.exec(code);
+      const speed = /platformSpeed\s*:\s*(\d+)/.exec(code);
+      const axis = /platformAxis\s*:\s*["']([xy])["']/.exec(code);
+      if (range) options.push(`  platformRange: ${+range[1]},`);
+      if (speed) options.push(`  platformSpeed: ${+speed[1]},`);
+      if (axis) options.push(`  platformAxis: ${JSON.stringify(axis[1])},`);
+      return { width: newWidth, height: newHeight, placements, options };
+    }
+
+    function loadCode() {
+      try {
+        const level = parseLevelCode(output.value);
+        const loadedCells = createEmptyGrid(level.width, level.height);
+        for (const [row, col, tiles] of level.placements) {
+          for (let offset = 0; offset < tiles.length; offset++) {
+            loadedCells[row][col + offset] = tiles[offset];
+          }
+        }
+        width = level.width;
+        height = level.height;
+        widthInput.value = width;
+        heightInput.value = height;
+        cells = loadedCells;
+        levelOptions = level.options;
+        renderGrid();
+        status.style.color = "#a8f0b8";
+        status.textContent = "Level loaded.";
+      } catch (error) {
+        status.style.color = "#ffb3bf";
+        status.textContent = error.message;
+      }
+    }
+
+    gridElement.addEventListener("pointerdown", event => {
+      if (!event.target.classList.contains("cell")) return;
+      drawing = true;
+      drawTile = event.button === 2 ? " " : selectedTile;
+      lastPainted = "";
+      paint(event.target);
+      gridElement.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    gridElement.addEventListener("pointermove", event => {
+      if (!drawing) return;
+      paint(document.elementFromPoint(event.clientX, event.clientY));
+    });
+
+    gridElement.addEventListener("contextmenu", event => event.preventDefault());
+    window.addEventListener("pointerup", () => drawing = false);
+    window.addEventListener("pointercancel", () => drawing = false);
+    document.querySelector("#resize").addEventListener("click", resizeGrid);
+    widthInput.addEventListener("change", resizeGrid);
+    heightInput.addEventListener("change", resizeGrid);
+
+    document.querySelector("#clear").addEventListener("click", () => {
+      if (!confirm("Clear every tile from this level?")) return;
+      cells = createEmptyGrid(width, height);
+      renderGrid();
+    });
+
+    document.querySelector("#load").addEventListener("click", loadCode);
+
+    document.querySelector("#copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(output.value);
+        status.style.color = "#a8f0b8";
+        status.textContent = "Level code copied.";
+      } catch {
+        output.select();
+        document.execCommand("copy");
+        status.style.color = "#a8f0b8";
+        status.textContent = "Level code copied.";
+      }
+    });
+
+    renderPalette();
+    renderGrid();
+  </script>
+</body>
+</html>
