@@ -1,5 +1,11 @@
 # JS13K 2026 Rainbow Platformer
 
+$env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;$env:Path"
+
+& ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress "passes=3,top_retain=startGame" --mangle "reserved=[startGame]" --toplevel --output build/game.min.js
+
+& ".\node_modules\.bin\roadroller.cmd" -O2 build/game.min.js -o build/game.js
+
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
 The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, generated music and Web Audio effects, camera effects, a run timer and death counter, and seven hand-authored levels.
@@ -58,7 +64,7 @@ $env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependen
 From the project root, combine and minify the source files with Terser. The file order must remain the same as the loading order in `index.html` because the game uses shared globals:
 
 ```powershell
-& ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress passes=3 --mangle --output build/game.min.js
+& ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress "passes=3,top_retain=startGame" --mangle "reserved=[startGame]" --toplevel --output build/game.min.js
 ```
 
 Then create the final Roadroller build using level-two optimization:
@@ -67,7 +73,7 @@ Then create the final Roadroller build using level-two optimization:
 & ".\node_modules\.bin\roadroller.cmd" -O2 build/game.min.js -o build/game.js
 ```
 
-The `PATH` change applies only to the current PowerShell window. Do not enable Terser top-level mangling or Roadroller's `--dirty` option for this project. See [`Submit.md`](Submit.md) for the complete submission notes.
+The `PATH` change applies only to the current PowerShell window. The Terser command safely compresses and mangles top-level names while retaining the `startGame` entry point used by the HTML. Do not remove either `top_retain=startGame` or `reserved=[startGame]`, and do not use Roadroller's `--dirty` option for this project. See [`Submit.md`](Submit.md) for the complete submission notes.
 
 ## Project structure
 

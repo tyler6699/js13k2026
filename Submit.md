@@ -16,8 +16,9 @@ The input order must match the order in `index.html` because the game uses share
 npx terser `
   keys.js utility.js tile.js song.js sound.js level.js entity.js `
   particles.js hero.js camera.js game.js`
-  --compress passes=3 `
-  --mangle `
+  --compress "passes=3,top_retain=startGame" `
+  --mangle "reserved=[startGame]" `
+  --toplevel `
   --output build/game.min.js
 ```
 
@@ -49,7 +50,7 @@ In the submission copy of `index.html`, replace the dynamic block that loads the
 
 The existing `body onload="startGame()"` can remain because `startGame` is deliberately left as a global function.
 
-Do not enable Terser top-level mangling without reserving `startGame`, or the name used by the HTML may be changed. Avoid property mangling until the result has been tested carefully because the game uses browser and canvas API properties.
+The Terser command uses top-level compression and mangling for a substantial size reduction. `top_retain=startGame` prevents compression from dropping the HTML entry point, while `reserved=[startGame]` prevents mangling from renaming it. Keep both options. Avoid property mangling until the result has been tested carefully because the game uses browser and canvas API properties.
 
 Do not use Roadroller's `--dirty` option with the current HTML. The canvas has the single-letter ID `c`, which can collide with the free variables used by dirty-mode decoder code.
 

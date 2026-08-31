@@ -276,9 +276,9 @@
     let lastPainted = "";
     let levelOptions = [];
 
-    function createEmptyGrid(newWidth, newHeight, oldCells = []) {
+    function createEmptyGrid(newWidth, newHeight, oldCells = [], rowOffset = 0) {
       return Array.from({ length: newHeight }, (_, row) =>
-        Array.from({ length: newWidth }, (_, col) => oldCells[row]?.[col] || " ")
+        Array.from({ length: newWidth }, (_, col) => oldCells[row - rowOffset]?.[col] || " ")
       );
     }
 
@@ -347,7 +347,7 @@
       const newHeight = Math.max(4, Math.min(50, parseInt(heightInput.value) || height));
       widthInput.value = newWidth;
       heightInput.value = newHeight;
-      cells = createEmptyGrid(newWidth, newHeight, cells);
+      cells = createEmptyGrid(newWidth, newHeight, cells, newHeight - height);
       width = newWidth;
       height = newHeight;
       renderGrid();
