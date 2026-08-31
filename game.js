@@ -25,7 +25,7 @@ function startGame() {
   Level.init();
 
   hero = new Hero(64, 64);
-  camera = new Camera(canvas.width, canvas.height);
+  camera = new Camera(GAME_WIDTH, GAME_HEIGHT);
   wallRideShakeTimer = 0;
 
   lastTime = performance.now();
@@ -40,13 +40,24 @@ function startFromTitle() {
 }
 
 function resize() {
-  // Keep a fixed 5:3 game surface. CSS scales it to the largest size that
-  // fits the browser, leaving letterbox space instead of stretching it.
-  canvas.width = GAME_WIDTH;
-  canvas.height = GAME_HEIGHT;
+  // Keep the game's 800 x 480 coordinate system, but rasterize at the actual
+  // display size. Letting CSS shrink an 800px bitmap makes one-pixel details
+  // such as locked-tile outlines snap to oversized display pixels.
+  var bounds = canvas.getBoundingClientRect();
+  var pixelRatio = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(bounds.width * pixelRatio));
+  canvas.height = Math.max(1, Math.round(bounds.height * pixelRatio));
+  ctx.setTransform(
+    canvas.width / GAME_WIDTH,
+    0,
+    0,
+    canvas.height / GAME_HEIGHT,
+    0,
+    0
+  );
   ctx.imageSmoothingEnabled = false;
   if (camera) {
-    camera.resize(canvas.width, canvas.height);
+    camera.resize(GAME_WIDTH, GAME_HEIGHT);
   }
 }
 
@@ -126,26 +137,26 @@ function draw() {
   }
 
   ctx.fillStyle = "#7ec0ee";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
   // Two distant ridgelines drift at different speeds for cheap parallax depth.
   for (var layer = 0; layer < 2; layer++) {
     ctx.fillStyle = layer ? "#72a8ca" : "#a7cee4";
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height);
+    ctx.moveTo(0, GAME_HEIGHT);
     for (var x = -200; x < 1100; x += 100) {
       ctx.lineTo(
         x - ((camera.x * (layer + 1)) / 12) % 200,
         320 + layer * 70 - (x % 200 ? 45 : 0) - (camera.y * (layer + 1)) / 24
       );
     }
-    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
     ctx.fill();
   }
 
   ctx.save();
   ctx.translate(Math.round(camera.shakeX), Math.round(camera.shakeY));
-  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.translate(GAME_WIDTH / 2, GAME_HEIGHT / 2);
   ctx.scale(camera.zoom, camera.zoom);
   ctx.translate(-camera.viewWidth / 2, -camera.viewHeight / 2);
   Level.draw(ctx, camera);
@@ -154,16 +165,16 @@ function draw() {
   hero.draw(ctx, camera);
   ctx.restore();
 
-  Level.drawHud(ctx, canvas);
+  Level.drawHud(ctx, GAME_WIDTH, GAME_HEIGHT);
   // Debug.draw(ctx, hero);
 }
 
 function drawTitleScreen() {
-  var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  var gradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
   gradient.addColorStop(0, "#18264a");
   gradient.addColorStop(1, "#39204f");
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
   Particles.draw(ctx, titleCamera);
 
@@ -178,7 +189,7 @@ function drawTitleScreen() {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   var titleWidth = ctx.measureText(title).width;
-  var titleX = (canvas.width - titleWidth) / 2;
+  var titleX = (GAME_WIDTH - titleWidth) / 2;
   for (var i = 0; i < title.length; i++) {
     var letter = title[i];
     ctx.strokeStyle = "#0c1020";
@@ -202,12 +213,12 @@ function drawTitleScreen() {
     Level.gameComplete
       ? "You have saved the Rainbow!"
       : "Collect all the crystals to save the Rainbow!",
-    canvas.width / 2,
+    GAME_WIDTH / 2,
     275
   );
 
   ctx.globalAlpha = Level.gameComplete ? 0 : 0.65 + Math.sin(titleTime * 4) * 0.35;
   ctx.font = "800 21px system-ui, sans-serif";
-  ctx.fillText("CLICK TO START", canvas.width / 2, 348);
+  ctx.fillText("CLICK TO START", GAME_WIDTH / 2, 348);
   ctx.globalAlpha = 1;
 }

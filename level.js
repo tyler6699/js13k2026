@@ -49,6 +49,9 @@ var Level = {
     },
     { // 2
       colors: ["red","orange"],
+      platformRange: 8,
+      platformSpeed: 80,
+      platformAxis: "x",
       rows: makeLevelRows(31, 16, [
         [0, 12, "1"],
         [1, 11, "O1"],
@@ -68,7 +71,7 @@ var Level = {
         [15, 4, "1^^^^^^^^^^^^^^^^^^^^^^^^^^"],
       ]),
     },
-    {
+    { // 3
       colors: ["red","orange","yellow"],
       rows: makeLevelRows(31, 16, [
         [1, 9, "C"],
@@ -92,35 +95,45 @@ var Level = {
         [15, 4, "^^^^^^^^^^^^^^^^^^^^^^^^^^^"],
       ]),
     },
-    {
-      colors: ["red", "orange", "yellow", "green"],
-      platformRange: 6,
-      platformSpeed: 70,
-      platformAxis: "y",
-      // Climb right, ride upward, fall through yellow, then use green to loop
-      // back across the upper route to the door near the starting side.
-      rows: makeLevelRows(46, 20, [
-        [3, 8, "D"],
-        [3, 36, "Y"],
-        [5, 6, "111111"],
-        [5, 34, "yyyyyy"],
-        [6, 10, "1111111"],
-        [8, 14, "1111111"],
-        [9, 31, "O"],
-        [10, 20, "11111111"],
-        [10, 29, "rrrrr"],
-        [10, 35, "M"],
-        [12, 23, "rrrrr"],
-        [14, 17, "rrrrr"],
-        [16, 6, "C"],
-        [16, 11, "rrrrr"],
-        [16, 40, "G"],
-        [17, 4, "111111"],
-        [17, 29, "gggg"],
-        [17, 38, "111111"],
-        [18, 0, "1111111111111111111111111111111111111111111111"],
-      ]),
-    },
+    { // 4
+  colors: ["red","orange","yellow","green"],
+  platformRange: 7,
+  platformSpeed: 70,
+  platformAxis: "y",
+  rows: makeLevelRows(45, 19, [
+    [0, 9, "1"],
+    [0, 18, "1"],
+    [1, 9, "1"],
+    [1, 18, "1"],
+    [2, 9, "1    O   1"],
+    [3, 7, "1 1  1111  1"],
+    [4, 6, "11 1  1     1"],
+    [5, 0, "11111111 1  1     1"],
+    [6, 9, "1  1     1"],
+    [7, 9, "1  1     1"],
+    [7, 43, "D"],
+    [8, 9, "1  r     1"],
+    [9, 4, "C    1  r     1"],
+    [9, 41, "1111"],
+    [10, 9, "1  r111M 1"],
+    [10, 41, "1"],
+    [11, 9, "1  r     y"],
+    [11, 41, "1"],
+    [12, 12, "r     y"],
+    [12, 41, "1"],
+    [13, 0, "11"],
+    [13, 12, "r     y"],
+    [13, 41, "1"],
+    [14, 11, "r"],
+    [14, 18, "yG"],
+    [14, 41, "1"],
+    [15, 10, "r     1111gggg"],
+    [15, 37, "gggg1"],
+    [16, 2, "1111   r   Y"],
+    [17, 9, "1  1111"],
+    [18, 0, "^^^^^^^^^1^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"],
+  ]),
+},
     {
       colors: ["red", "orange", "yellow", "green", "blue"],
       platformRange: 6,
@@ -876,6 +889,7 @@ var Level = {
     color,
     seamOverlap
   ) {
+    ctx.save();
     var info = COLOR_INFO[color];
     var unlocked = Level.isColorUnlocked(color);
     var baseFilled = info.disappears ? !unlocked : unlocked;
@@ -925,13 +939,14 @@ var Level = {
         } else if (!filled) {
           ctx.globalAlpha = state && state.phase === 2 ? 0.08 : 0.55;
           ctx.strokeStyle = info.highlight;
+          ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
           ctx.strokeRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2);
           ctx.setLineDash([]);
         }
       }
     }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   },
 
   drawSpikes: function (ctx, cameraX, cameraY, startCol, endCol, startRow, endRow) {
@@ -1074,7 +1089,7 @@ var Level = {
     ctx.restore();
   },
 
-  drawHud: function (ctx, canvas) {
+  drawHud: function (ctx, width, height) {
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "bold 15px monospace";
@@ -1088,7 +1103,7 @@ var Level = {
     ctx.textAlign = "left";
     ctx.fillText("TIME " + minutes + ":" + seconds, 16, 26);
     ctx.textAlign = "right";
-    ctx.fillText("DEATHS " + Level.deathCount, canvas.width - 16, 26);
+    ctx.fillText("DEATHS " + Level.deathCount, width - 16, 26);
     ctx.textAlign = "center";
 
     var nextColor = null;
@@ -1113,30 +1128,30 @@ var Level = {
     if (Level.failed) message = Level.failureMessage;
     if (Level.complete) message = "LEVEL " + (Level.currentIndex + 1) + " COMPLETE";
     if (Level.gameComplete) message = "ALL LEVELS COMPLETE";
-    ctx.fillText("LEVEL " + (Level.currentIndex + 1) + "  -  " + message, canvas.width / 2, 26);
+    ctx.fillText("LEVEL " + (Level.currentIndex + 1) + "  -  " + message, width / 2, 26);
 
     if (Level.complete) {
       ctx.globalAlpha = 0.18;
       ctx.fillStyle = COLOR_INFO[Level.requiredColors[Level.requiredColors.length - 1]].color;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, width, height);
       ctx.globalAlpha = 1;
       ctx.font = "bold 32px monospace";
       ctx.fillStyle = "#fff";
       ctx.fillText(
         Level.gameComplete ? "ALL LEVELS COMPLETE" : "LEVEL " + (Level.currentIndex + 1) + " COMPLETE",
-        canvas.width / 2,
-        canvas.height / 2
+        width / 2,
+        height / 2
       );
     }
 
     if (Level.failed) {
       ctx.globalAlpha = 0.35;
       ctx.fillStyle = "#17151f";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, width, height);
       ctx.globalAlpha = 1;
       ctx.font = "bold 32px monospace";
       ctx.fillStyle = "#fff";
-      ctx.fillText("TRY AGAIN", canvas.width / 2, canvas.height / 2);
+      ctx.fillText("TRY AGAIN", width / 2, height / 2);
     }
     ctx.restore();
   },

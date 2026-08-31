@@ -11,7 +11,7 @@ $env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependen
 
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
-The game is written in plain JavaScript and renders to a fixed `800 × 480` canvas. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, generated music and Web Audio effects, camera effects, a run timer and death counter, and seven hand-authored levels.
+The game is written in plain JavaScript and renders with a fixed `800 × 480` logical coordinate system at the browser's current display resolution. It includes keyboard and touch controls, responsive scaling, wall jumps, a double jump, moving platforms, hazards, generated music and Web Audio effects, camera effects, a run timer and death counter, and seven hand-authored levels.
 
 ## Playing the game
 
