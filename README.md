@@ -1,10 +1,13 @@
 # JS13K 2026 Rainbow Platformer
 
+```powershell
 $env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;$env:Path"
 
 & ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress "passes=3,top_retain=startGame" --mangle "reserved=[startGame]" --toplevel --output build/game.min.js
 
+
 & ".\node_modules\.bin\roadroller.cmd" -O2 build/game.min.js -o build/game.js
+```
 
 A fast, momentum-focused browser platformer about restoring the colours of the rainbow. Collect each level's crystals to activate its colour mechanics, then reach the door.
 
@@ -40,57 +43,6 @@ Falling onto spikes restarts the level. Completed levels advance automatically a
 | Violet | `V` | — | The unstable final crystal starts a five-second countdown. Reach the door before it creates a large rainbow explosion. |
 
 The player, trail, particles, HUD, and exit door gain each restored colour as the level progresses.
-
-## Running locally
-
-There is no build step. Serve the repository over HTTP and open it in a browser:
-
-```sh
-python -m http.server 8000
-```
-
-Then visit [http://localhost:8000](http://localhost:8000).
-
-Opening `index.html` directly may work for basic play, but a local server more closely matches deployment behavior and is required by some browser APIs.
-
-## Building the minified JavaScript
-
-In PowerShell, first add the bundled Node.js runtime to the current terminal session:
-
-```powershell
-$env:Path = "C:\Users\tyler\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;$env:Path"
-```
-
-From the project root, combine and minify the source files with Terser. The file order must remain the same as the loading order in `index.html` because the game uses shared globals:
-
-```powershell
-& ".\node_modules\.bin\terser.cmd" keys.js utility.js tile.js song.js sound.js level.js entity.js particles.js hero.js camera.js game.js --compress "passes=3,top_retain=startGame" --mangle "reserved=[startGame]" --toplevel --output build/game.min.js
-```
-
-Then create the final Roadroller build using level-two optimization:
-
-```powershell
-& ".\node_modules\.bin\roadroller.cmd" -O2 build/game.min.js -o build/game.js
-```
-
-The `PATH` change applies only to the current PowerShell window. The Terser command safely compresses and mangles top-level names while retaining the `startGame` entry point used by the HTML. Do not remove either `top_retain=startGame` or `reserved=[startGame]`, and do not use Roadroller's `--dirty` option for this project. See [`Submit.md`](Submit.md) for the complete submission notes.
-
-## Project structure
-
-| File | Purpose |
-| --- | --- |
-| `index.html` | Loads the game scripts and defines the canvas and mobile controls. |
-| `game.js` | Creates the canvas and runs the update/draw loop. |
-| `level.js` | Defines level maps, crystals, colour state, platforms, portals, hazards, doors, and HUD text. |
-| `tile.js` | Defines tile size and dynamic solid-tile rules. |
-| `entity.js` | Provides tile collision and movement resolution. |
-| `hero.js` | Implements player movement, jumps, green bouncing, animation, and drawing. |
-| `particles.js` | Implements movement, crystal, bounce, and portal effects. |
-| `sound.js` | Synthesizes jump, pickup, portal, death, and completion effects with Web Audio. |
-| `song.js` | Generates the looping soundtrack and starts it after player interaction. |
-| `camera.js` | Follows the player and applies zoom and shake. |
-| `keys.js` | Handles keyboard and touch input. |
-| `game.css` | Scales the fixed game canvas and lays out touch controls. |
 
 ## Creating levels
 
@@ -188,79 +140,3 @@ Each indigo block has its own crumble timer, so a run of `i` characters collapse
 | `v` | Down |
 | `<` | Left |
 | `>` | Right |
-
-Portal characters occupy non-solid cells. They remain faint and inactive until the blue crystal is collected.
-
-Portals are paired in row-major scan order—from the top row to the bottom row, and from left to right within each row:
-
-1. The first and second portal markers form pair 1.
-2. The third and fourth form pair 2.
-3. Additional markers continue in pairs.
-
-Both ends are entrances. When the player enters a portal, the partner marker determines the exit direction. Incoming speed is preserved, with a minimum exit speed of `360 px/s`, and a short cooldown prevents immediate return through the destination.
-
-For example:
-
-```js
-rows: [
-  "                         >       D",
-  "                              1111",
-  "",
-  "             u",
-  "            111",
-]
-```
-
-Entering the lower `u` portal exits through `>` and launches the player right. Entering `>` exits through `u` and launches the player upward.
-
-### Complete example
-
-This small level introduces red blocks:
-
-```js
-{
-  colors: ["red"],
-  rows: [
-    "",
-    "",
-    "",
-    "                    D",
-    "            C",
-    "          111rrrrrrrrrr",
-    "1111111111111^^^^^^^^^^",
-  ],
-},
-```
-
-The player starts near the upper-left and falls to the permanent ground. The red crystal is supported by `111`; collecting it makes the `r` bridge solid and opens the route to the door.
-
-### Level design checklist
-
-Before considering a map finished, verify that:
-
-- The spawn has a safe landing surface.
-- Every colour in `colors` has exactly one reachable crystal.
-- The crystals can be collected in the HUD order.
-- Blocks required to reach a crystal are active at that point in the sequence.
-- Yellow blocks do not strand the player when they disappear.
-- Green pads have enough unobstructed space for an eight-tile bounce.
-- Portal markers occur in complete pairs and their scan order creates the intended links.
-- Portal exits leave enough clearance for the player hitbox.
-- Indigo runs give the player time to react before the first block crumbles.
-- The door has a supporting platform and is reachable after all required colors are restored.
-- Gaps contain spikes or another intentional recovery/failure route.
-- The longest row gives the camera the intended level width.
-
-Use `+` and `-` to move quickly between levels during testing, and press `F1` to inspect the player and colour state.
-
-## Adding a level
-
-1. Open `level.js`.
-2. Add a new object to the end of `Level.levels`.
-3. List the required colours in collection order.
-4. Build the map from the legend above.
-5. Ensure the map contains one door and every required crystal.
-6. Reload the browser and use the level-skip keys to reach the new map.
-7. Test the intended route as well as falls, backtracking, and collecting crystals in an unexpected order.
-
-Because levels are read directly from source, no registration or build command is required.

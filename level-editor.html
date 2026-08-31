@@ -65,7 +65,7 @@
       text-transform: uppercase;
     }
 
-    input, button, textarea { font: inherit; }
+    input, button, select, textarea { font: inherit; }
 
     input {
       width: 84px;
@@ -143,6 +143,7 @@
     }
 
     .cell {
+      position: relative;
       display: grid;
       place-items: center;
       width: 25px;
@@ -158,6 +159,52 @@
     .cell:hover { outline: 2px solid #fff; outline-offset: -2px; z-index: 1; }
     .cell.spawn { box-shadow: inset 0 0 0 2px #fff8; }
     .cell.spawn:empty::after { content: "S"; color: #fff8; }
+
+    .cell.platform-path::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #ffb36b66;
+      pointer-events: none;
+    }
+
+    dialog {
+      width: min(430px, calc(100vw - 32px));
+      padding: 0;
+      border: 1px solid #ffffff35;
+      border-radius: 12px;
+      background: #151927;
+      color: #f7f5ff;
+      box-shadow: 0 24px 70px #000b;
+    }
+
+    dialog::backdrop { background: #050713b8; }
+
+    .modal-content { padding: 20px; }
+    .modal-content h2 { margin: 0 0 6px; }
+    .modal-content p { margin-bottom: 18px; font-size: 13px; line-height: 1.45; }
+
+    .platform-fields {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .platform-fields input, .platform-fields select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ffffff2b;
+      border-radius: 7px;
+      background: #090c16;
+      color: #fff;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
 
     .hint {
       margin: 10px 0 0;
@@ -188,6 +235,10 @@
       .grid-shell { max-height: 60vh; }
       textarea { min-height: 320px; }
     }
+
+    @media (max-width: 480px) {
+      .platform-fields { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -216,7 +267,7 @@
       <div class="grid-shell">
         <div id="grid" aria-label="Level grid"></div>
       </div>
-      <p class="hint">Spawn is fixed at column 2, row 2. Right-click paints with the eraser. Portal ends pair in reading order.</p>
+      <p class="hint">Spawn is fixed at column 2, row 2. Click a moving platform to edit its level-wide motion settings. Right-click paints with the eraser. Portal ends pair in reading order.</p>
     </section>
 
     <aside class="panel">
@@ -230,6 +281,31 @@
       <div id="status" role="status" aria-live="polite"></div>
     </aside>
   </main>
+
+  <dialog id="platform-dialog" aria-labelledby="platform-title">
+    <form id="platform-form" class="modal-content">
+      <h2 id="platform-title">Moving platform options</h2>
+      <p><span id="platform-location"></span> These settings apply to every moving platform in this level.</p>
+      <div class="platform-fields">
+        <label>Axis
+          <select id="platform-axis">
+            <option value="x">Horizontal (x)</option>
+            <option value="y">Vertical (y)</option>
+          </select>
+        </label>
+        <label>Range (tiles)
+          <input id="platform-range" type="number" min="0" max="120" required />
+        </label>
+        <label>Speed (px/s)
+          <input id="platform-speed" type="number" min="1" max="1000" required />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="platform-cancel" type="button">Cancel</button>
+        <button type="submit">Save options</button>
+      </div>
+    </form>
+  </dialog>
 
   <script>
     const tileTypes = [
@@ -267,6 +343,12 @@
     const heightInput = document.querySelector("#height");
     const output = document.querySelector("#output");
     const status = document.querySelector("#status");
+    const platformDialog = document.querySelector("#platform-dialog");
+    const platformForm = document.querySelector("#platform-form");
+    const platformAxisInput = document.querySelector("#platform-axis");
+    const platformRangeInput = document.querySelector("#platform-range");
+    const platformSpeedInput = document.querySelector("#platform-speed");
+    const platformLocation = document.querySelector("#platform-location");
     let width = +widthInput.value;
     let height = +heightInput.value;
     let cells = createEmptyGrid(width, height);
@@ -275,6 +357,7 @@
     let drawTile = selectedTile;
     let lastPainted = "";
     let levelOptions = [];
+    let platformSettings = { axis: "x", range: 4, speed: 80 };
 
     function createEmptyGrid(newWidth, newHeight, oldCells = [], rowOffset = 0) {
       return Array.from({ length: newHeight }, (_, row) =>
@@ -312,6 +395,31 @@
       cell.title = `Column ${col}, row ${row}: ${tile[1]}`;
     }
 
+    function renderPlatformPaths() {
+      for (const cell of gridElement.children) cell.classList.remove("platform-path");
+
+      const markPathCell = (row, col) => {
+        if (row < 0 || row >= height || col < 0 || col >= width) return;
+        gridElement.children[row * width + col]?.classList.add("platform-path");
+      };
+
+      for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+          if (cells[row][col] !== "M") continue;
+          if (platformSettings.axis === "x") {
+            for (let pathCol = col; pathCol <= col + platformSettings.range + 1; pathCol++) {
+              markPathCell(row, pathCol);
+            }
+          } else {
+            for (let pathRow = row - platformSettings.range; pathRow <= row; pathRow++) {
+              markPathCell(pathRow, col);
+              markPathCell(pathRow, col + 1);
+            }
+          }
+        }
+      }
+    }
+
     function renderGrid() {
       gridElement.replaceChildren();
       gridElement.style.gridTemplateColumns = `repeat(${width}, 25px)`;
@@ -327,6 +435,7 @@
         }
       }
       gridElement.append(fragment);
+      renderPlatformPaths();
       updateOutput();
     }
 
@@ -337,9 +446,37 @@
       const paintKey = `${row}:${col}`;
       if (paintKey === lastPainted) return;
       lastPainted = paintKey;
+      const previousTile = cells[row][col];
       cells[row][col] = drawTile;
       renderCell(cell, row, col);
+      if (previousTile === "M" || drawTile === "M") renderPlatformPaths();
       updateOutput();
+    }
+
+    function openPlatformOptions(row, col) {
+      platformAxisInput.value = platformSettings.axis;
+      platformRangeInput.value = platformSettings.range;
+      platformSpeedInput.value = platformSettings.speed;
+      platformLocation.textContent = `Platform at column ${col}, row ${row}.`;
+      platformDialog.showModal();
+    }
+
+    function savePlatformOptions() {
+      platformSettings = {
+        axis: platformAxisInput.value,
+        range: Math.max(0, Math.min(120, parseInt(platformRangeInput.value) || 0)),
+        speed: Math.max(1, Math.min(1000, parseInt(platformSpeedInput.value) || 80)),
+      };
+      levelOptions = [
+        `  platformRange: ${platformSettings.range},`,
+        `  platformSpeed: ${platformSettings.speed},`,
+        `  platformAxis: ${JSON.stringify(platformSettings.axis)},`,
+      ];
+      renderPlatformPaths();
+      updateOutput();
+      platformDialog.close();
+      status.style.color = "#a8f0b8";
+      status.textContent = "Moving platform options saved.";
     }
 
     function resizeGrid() {
@@ -471,7 +608,12 @@ ${optionLines}  rows: makeLevelRows(${width}, ${height}, [${placementLines ? "\n
       if (range) options.push(`  platformRange: ${+range[1]},`);
       if (speed) options.push(`  platformSpeed: ${+speed[1]},`);
       if (axis) options.push(`  platformAxis: ${JSON.stringify(axis[1])},`);
-      return { width: newWidth, height: newHeight, placements, options };
+      const platform = {
+        range: range ? +range[1] : 4,
+        speed: speed ? +speed[1] : 80,
+        axis: axis ? axis[1] : "x",
+      };
+      return { width: newWidth, height: newHeight, placements, options, platform };
     }
 
     function loadCode() {
@@ -489,6 +631,7 @@ ${optionLines}  rows: makeLevelRows(${width}, ${height}, [${placementLines ? "\n
         heightInput.value = height;
         cells = loadedCells;
         levelOptions = level.options;
+        platformSettings = level.platform;
         renderGrid();
         status.style.color = "#a8f0b8";
         status.textContent = "Level loaded.";
@@ -500,10 +643,23 @@ ${optionLines}  rows: makeLevelRows(${width}, ${height}, [${placementLines ? "\n
 
     gridElement.addEventListener("pointerdown", event => {
       if (!event.target.classList.contains("cell")) return;
+      const row = +event.target.dataset.row;
+      const col = +event.target.dataset.col;
+      if (event.button === 0 && cells[row][col] === "M") {
+        openPlatformOptions(row, col);
+        event.preventDefault();
+        return;
+      }
       drawing = true;
       drawTile = event.button === 2 ? " " : selectedTile;
       lastPainted = "";
       paint(event.target);
+      if (event.button === 0 && drawTile === "M") {
+        drawing = false;
+        openPlatformOptions(row, col);
+        event.preventDefault();
+        return;
+      }
       gridElement.setPointerCapture(event.pointerId);
       event.preventDefault();
     });
@@ -527,6 +683,12 @@ ${optionLines}  rows: makeLevelRows(${width}, ${height}, [${placementLines ? "\n
     });
 
     document.querySelector("#load").addEventListener("click", loadCode);
+
+    platformForm.addEventListener("submit", event => {
+      event.preventDefault();
+      savePlatformOptions();
+    });
+    document.querySelector("#platform-cancel").addEventListener("click", () => platformDialog.close());
 
     document.querySelector("#copy").addEventListener("click", async () => {
       try {
