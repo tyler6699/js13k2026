@@ -825,8 +825,32 @@ var Level = {
         );
       }
     }
-    ctx.fillStyle = "#17151f";
+    ctx.fillStyle = "#70452d";
     ctx.fill();
+
+    // A tiny repeating dirt mark adds texture without needing tile artwork.
+    ctx.fillStyle = "#8d5b38";
+    for (var row = startRow; row < endRow; row++) {
+      for (var col = startCol; col < endCol; col++) {
+        if (Level.tileAt(col, row) !== 1) continue;
+        var x = col * TILE_SIZE - cameraX;
+        var y = row * TILE_SIZE - cameraY;
+        ctx.fillRect(x + 6 + ((row + col) & 1) * 12, y + 16, 4, 3);
+      }
+    }
+
+    // Only cap exposed ground, so walls and deep stacks remain readable dirt.
+    for (var row = startRow; row < endRow; row++) {
+      for (var col = startCol; col < endCol; col++) {
+        if (Level.tileAt(col, row) !== 1 || Level.baseTileAt(col, row - 1) !== 0) continue;
+        var x = col * TILE_SIZE - cameraX;
+        var y = row * TILE_SIZE - cameraY;
+        ctx.fillStyle = "#367a35";
+        ctx.fillRect(x, y + 5, TILE_SIZE + seamOverlap, 3);
+        ctx.fillStyle = "#67bd45";
+        ctx.fillRect(x, y, TILE_SIZE + seamOverlap, 5);
+      }
+    }
 
     Level.drawSpikes(ctx, cameraX, cameraY, startCol, endCol, startRow, endRow);
     Level.drawColorTiles(
@@ -925,19 +949,64 @@ var Level = {
         }
         ctx.fillStyle = info.color;
         ctx.fillRect(x, y, TILE_SIZE + seamOverlap, TILE_SIZE + seamOverlap);
-        if (filled && info.bounces) {
-          ctx.globalAlpha = 0.85;
-          ctx.strokeStyle = info.highlight;
+
+        // Shared candy-gem bevel and diagonal glint.
+        if (filled) {
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = info.highlight;
+          ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, 2);
+          ctx.fillRect(x + 2, y + 4, 2, TILE_SIZE - 6);
+          ctx.globalAlpha = 0.2;
+          ctx.fillStyle = "#17151f";
+          ctx.fillRect(x + 2, y + TILE_SIZE - 4, TILE_SIZE - 2, 4);
+          ctx.fillRect(x + TILE_SIZE - 4, y + 4, 4, TILE_SIZE - 8);
+          ctx.globalAlpha = 0.18;
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.moveTo(x + 20, y + 5);
+          ctx.lineTo(x + 27, y + 5);
+          ctx.lineTo(x + 13, y + 19);
+          ctx.lineTo(x + 8, y + 19);
+          ctx.fill();
+        }
+
+        // Each colour keeps a readable symbol for its mechanic.
+        ctx.globalAlpha = state && state.phase === 2 ? 0.08 : filled ? 0.75 : 0.32;
+        ctx.strokeStyle = info.highlight;
+        ctx.fillStyle = info.highlight;
+        ctx.lineWidth = 2;
+        if (color === "red") {
+          ctx.beginPath();
+          ctx.moveTo(x + 5, y + 26);
+          ctx.lineTo(x + 15, y + 7);
+          ctx.moveTo(x + 16, y + 26);
+          ctx.lineTo(x + 26, y + 7);
+          ctx.stroke();
+        } else if (color === "orange") {
+          ctx.beginPath();
+          ctx.moveTo(x + 6, y + 9);
+          ctx.lineTo(x + 13, y + 16);
+          ctx.lineTo(x + 6, y + 23);
+          ctx.moveTo(x + 17, y + 9);
+          ctx.lineTo(x + 24, y + 16);
+          ctx.lineTo(x + 17, y + 23);
+          ctx.stroke();
+        } else if (color === "yellow") {
+          ctx.fillRect(x + 7, y + 7, 6, 6);
+          ctx.fillRect(x + 19, y + 7, 6, 6);
+          ctx.fillRect(x + 13, y + 13, 6, 6);
+          ctx.fillRect(x + 7, y + 19, 6, 6);
+          ctx.fillRect(x + 19, y + 19, 6, 6);
+        } else if (info.bounces) {
           ctx.lineWidth = 3;
+          ctx.strokeStyle = info.highlight;
           ctx.beginPath();
           ctx.moveTo(x + 8, y + 20);
           ctx.lineTo(x + 16, y + 11);
           ctx.lineTo(x + 24, y + 20);
           ctx.stroke();
-          ctx.lineWidth = 1;
-        } else if (filled && info.crumbles) {
-          ctx.globalAlpha = state && state.phase === 1 ? 1 : 0.65;
-          ctx.strokeStyle = info.highlight;
+        } else if (info.crumbles) {
+          if (state && state.phase === 1) ctx.globalAlpha = 1;
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(x + 8, y + 3);
@@ -948,8 +1017,9 @@ var Level = {
           ctx.lineTo(x + 24, y + 8);
           ctx.lineTo(x + 21, y + 19);
           ctx.stroke();
-          ctx.lineWidth = 1;
-        } else if (!filled) {
+        }
+
+        if (!filled) {
           ctx.globalAlpha = state && state.phase === 2 ? 0.08 : 0.55;
           ctx.strokeStyle = info.highlight;
           ctx.lineWidth = 1;
