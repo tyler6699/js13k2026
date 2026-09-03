@@ -1,7 +1,7 @@
 // level.js - level layouts, colour pickups, hazards, and exits
 // space = empty, 1 = ground, r/o/y/g/i = colour platforms
 // C/O/Y/G/B/I/V = colour crystals, u/v/</> = portals, D = door, ^ = spikes
-var LEVEL_COMPLETE_DELAY = 2;
+var LEVEL_COMPLETE_DELAY = 1;
 var INDIGO_CRUMBLE_DELAY = 0.3;
 var INDIGO_RESPAWN_DELAY = 1.5;
 var VIOLET_EXPLOSION_TIME = 5;
@@ -810,7 +810,7 @@ rows: makeLevelRows(47, 39, [
     Level.deathCount++;
     Level.failed = true;
     Level.failureMessage = message || "YOU FELL - RESTARTING";
-    Level.restartTimer = 0.85;
+    Level.restartTimer = 0.4;
     hero.vx = 0;
     hero.vy = 0;
     Sound.play("die");
